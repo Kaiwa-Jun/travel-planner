@@ -273,6 +273,8 @@ const DraggableScheduleItem = ({
   );
 };
 
+export const dynamic = "force-dynamic";
+
 export default function CreatePlanPage() {
   const [scheduleItems, setScheduleItems] =
     useState<ScheduleItem[]>(initialScheduleItems);
