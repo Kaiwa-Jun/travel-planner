@@ -1,25 +1,36 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { Navigation } from "@/components/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Input } from "@/components/ui/input"
-import { MapPin, Clock, Plus, GripVertical, Pencil, Trash2, Check, X, Calendar } from "lucide-react"
-import { motion } from "framer-motion"
-import { DndProvider, useDrag, useDrop } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
-import { format } from "date-fns"
-import { ja } from "date-fns/locale"
+import { useState, useRef } from "react";
+import { Navigation } from "@/components/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import {
+  MapPin,
+  Clock,
+  Plus,
+  GripVertical,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  Calendar,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
+import type { Identifier } from "dnd-core";
 
 interface ScheduleItem {
-  id: number
-  date: string // YYYY-MM-DD形式
-  time: string
-  title: string
-  location: string
-  image: string
+  id: number;
+  date: string; // YYYY-MM-DD形式
+  time: string;
+  title: string;
+  location: string;
+  image: string;
 }
 
 const initialScheduleItems: ScheduleItem[] = [
@@ -29,7 +40,8 @@ const initialScheduleItems: ScheduleItem[] = [
     time: "10:00",
     title: "東京スカイツリー",
     location: "東京都墨田区押上",
-    image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80"
+    image:
+      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80",
   },
   {
     id: 2,
@@ -37,7 +49,8 @@ const initialScheduleItems: ScheduleItem[] = [
     time: "11:30",
     title: "浅草寺",
     location: "東京都台東区浅草",
-    image: "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=800&auto=format&fit=crop&q=80"
+    image:
+      "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=800&auto=format&fit=crop&q=80",
   },
   {
     id: 3,
@@ -45,27 +58,28 @@ const initialScheduleItems: ScheduleItem[] = [
     time: "12:00",
     title: "上野動物園",
     location: "東京都台東区上野公園",
-    image: "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&auto=format&fit=crop&q=80"
-  }
-]
+    image:
+      "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&auto=format&fit=crop&q=80",
+  },
+];
 
 interface DragItem {
-  index: number
-  id: number
-  type: string
+  index: number;
+  id: number;
+  type: string;
 }
 
 interface DraggableScheduleItemProps {
-  item: ScheduleItem
-  index: number
-  moveItem: (dragIndex: number, hoverIndex: number) => void
-  editingId: number | null
-  editingItem: ScheduleItem | null
-  handleEdit: (item: ScheduleItem) => void
-  handleCancelEdit: () => void
-  handleSaveEdit: () => void
-  handleDelete: (id: number) => void
-  setEditingItem: (item: ScheduleItem | null) => void
+  item: ScheduleItem;
+  index: number;
+  moveItem: (dragIndex: number, hoverIndex: number) => void;
+  editingId: number | null;
+  editingItem: ScheduleItem | null;
+  handleEdit: (item: ScheduleItem) => void;
+  handleCancelEdit: () => void;
+  handleSaveEdit: () => void;
+  handleDelete: (id: number) => void;
+  setEditingItem: React.Dispatch<React.SetStateAction<ScheduleItem | null>>;
 }
 
 const DraggableScheduleItem = ({
@@ -78,54 +92,59 @@ const DraggableScheduleItem = ({
   handleCancelEdit,
   handleSaveEdit,
   handleDelete,
-  setEditingItem
+  setEditingItem,
 }: DraggableScheduleItemProps) => {
-  const ref = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null);
 
-  const [{ handlerId }, drop] = useDrop({
-    accept: 'SCHEDULE_ITEM',
+  const [{ handlerId }, drop] = useDrop<
+    DragItem,
+    void,
+    { handlerId: Identifier | null }
+  >({
+    accept: "SCHEDULE_ITEM",
     collect(monitor) {
       return {
         handlerId: monitor.getHandlerId(),
-      }
+      };
     },
-    hover(item: DragItem, monitor) {
+    hover(item, monitor) {
       if (!ref.current) {
-        return
+        return;
       }
-      const dragIndex = item.index
-      const hoverIndex = index
+      const dragIndex = item.index;
+      const hoverIndex = index;
 
       if (dragIndex === hoverIndex) {
-        return
+        return;
       }
 
-      const hoverBoundingRect = ref.current?.getBoundingClientRect()
-      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
-      const clientOffset = monitor.getClientOffset()
-      const hoverClientY = clientOffset!.y - hoverBoundingRect.top
+      const hoverBoundingRect = ref.current?.getBoundingClientRect();
+      const hoverMiddleY =
+        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+      const clientOffset = monitor.getClientOffset();
+      const hoverClientY = clientOffset!.y - hoverBoundingRect.top;
 
       if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
-        return
+        return;
       }
       if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
-        return
+        return;
       }
 
-      moveItem(dragIndex, hoverIndex)
-      item.index = hoverIndex
+      moveItem(dragIndex, hoverIndex);
+      item.index = hoverIndex;
     },
-  })
+  });
 
   const [{ isDragging }, drag] = useDrag({
-    type: 'SCHEDULE_ITEM',
+    type: "SCHEDULE_ITEM",
     item: () => ({ id: item.id, index }),
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  })
+  });
 
-  drag(drop(ref))
+  drag(drop(ref));
 
   return (
     <motion.div
@@ -134,7 +153,7 @@ const DraggableScheduleItem = ({
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.1 }}
       className={`group flex items-start gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-move ${
-        isDragging ? 'opacity-50' : ''
+        isDragging ? "opacity-50" : ""
       }`}
       data-handler-id={handlerId}
     >
@@ -142,7 +161,7 @@ const DraggableScheduleItem = ({
         <GripVertical className="h-4 w-4" />
       </div>
       <div className="flex-shrink-0 w-20 aspect-[4/3]">
-        <div 
+        <div
           className="w-full h-full rounded bg-cover bg-center"
           style={{ backgroundImage: `url(${item.image})` }}
         />
@@ -155,8 +174,10 @@ const DraggableScheduleItem = ({
               type="date"
               value={editingItem?.date}
               onChange={(e) => {
-                const newDate = e.target.value
-                setEditingItem(prev => prev ? { ...prev, date: newDate } : null)
+                const newDate = e.target.value;
+                setEditingItem((prev: ScheduleItem | null) =>
+                  prev ? { ...prev, date: newDate } : null
+                );
               }}
               className="max-w-[160px]"
             />
@@ -167,22 +188,32 @@ const DraggableScheduleItem = ({
               type="time"
               value={editingItem?.time}
               onChange={(e) => {
-                const newTime = e.target.value
-                setEditingItem(prev => prev ? { ...prev, time: newTime } : null)
+                const newTime = e.target.value;
+                setEditingItem((prev: ScheduleItem | null) =>
+                  prev ? { ...prev, time: newTime } : null
+                );
               }}
               className="max-w-[120px]"
             />
           </div>
           <Input
             value={editingItem?.title}
-            onChange={(e) => setEditingItem(prev => prev ? { ...prev, title: e.target.value } : null)}
+            onChange={(e) =>
+              setEditingItem((prev: ScheduleItem | null) =>
+                prev ? { ...prev, title: e.target.value } : null
+              )
+            }
             placeholder="タイトル"
           />
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <Input
               value={editingItem?.location}
-              onChange={(e) => setEditingItem(prev => prev ? { ...prev, location: e.target.value } : null)}
+              onChange={(e) =>
+                setEditingItem((prev: ScheduleItem | null) =>
+                  prev ? { ...prev, location: e.target.value } : null
+                )
+              }
               placeholder="場所"
             />
           </div>
@@ -239,151 +270,153 @@ const DraggableScheduleItem = ({
         </>
       )}
     </motion.div>
-  )
-}
+  );
+};
 
 export default function CreatePlanPage() {
-  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>(initialScheduleItems)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null)
+  const [scheduleItems, setScheduleItems] =
+    useState<ScheduleItem[]>(initialScheduleItems);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null);
   const [newSchedule, setNewSchedule] = useState({
-    date: format(new Date(), 'yyyy-MM-dd'),
+    date: format(new Date(), "yyyy-MM-dd"),
     time: "",
     title: "",
-    location: ""
-  })
+    location: "",
+  });
 
   // 日付と時間でソートする関数
   const sortByDateTime = (a: ScheduleItem, b: ScheduleItem) => {
-    const dateTimeA = new Date(`${a.date} ${a.time}`)
-    const dateTimeB = new Date(`${b.date} ${b.time}`)
-    return dateTimeA.getTime() - dateTimeB.getTime()
-  }
+    const dateTimeA = new Date(`${a.date} ${a.time}`);
+    const dateTimeB = new Date(`${b.date} ${b.time}`);
+    return dateTimeA.getTime() - dateTimeB.getTime();
+  };
 
   // 時間を再割り当てする関数
   const reassignTimes = (items: ScheduleItem[]) => {
     // 日付ごとにグループ化
     const groupedByDate = items.reduce((acc, item) => {
       if (!acc[item.date]) {
-        acc[item.date] = []
+        acc[item.date] = [];
       }
-      acc[item.date].push(item)
-      return acc
-    }, {} as Record<string, ScheduleItem[]>)
+      acc[item.date].push(item);
+      return acc;
+    }, {} as Record<string, ScheduleItem[]>);
 
     // 各日付グループ内で時間を再割り当て
-    const result: ScheduleItem[] = []
+    const result: ScheduleItem[] = [];
     Object.entries(groupedByDate).forEach(([date, dateItems]) => {
       const times = dateItems
-        .map(item => item.time)
+        .map((item) => item.time)
         .sort((a, b) => {
-          const timeA = new Date(`1970/01/01 ${a}`)
-          const timeB = new Date(`1970/01/01 ${b}`)
-          return timeA.getTime() - timeB.getTime()
-        })
+          const timeA = new Date(`1970/01/01 ${a}`);
+          const timeB = new Date(`1970/01/01 ${b}`);
+          return timeA.getTime() - timeB.getTime();
+        });
 
       dateItems.forEach((item, index) => {
         result.push({
           ...item,
-          time: times[index]
-        })
-      })
-    })
+          time: times[index],
+        });
+      });
+    });
 
-    return result.sort(sortByDateTime)
-  }
+    return result.sort(sortByDateTime);
+  };
 
   // 日付ごとにスケジュールをグループ化する関数
   const groupSchedulesByDate = (items: ScheduleItem[]) => {
     const grouped = items.reduce((acc, item) => {
       if (!acc[item.date]) {
-        acc[item.date] = []
+        acc[item.date] = [];
       }
-      acc[item.date].push(item)
-      return acc
-    }, {} as Record<string, ScheduleItem[]>)
+      acc[item.date].push(item);
+      return acc;
+    }, {} as Record<string, ScheduleItem[]>);
 
     // 日付でソート
     return Object.entries(grouped)
       .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
       .map(([date, items]) => ({
         date,
-        items: items.sort((a, b) => a.time.localeCompare(b.time))
-      }))
-  }
+        items: items.sort((a, b) => a.time.localeCompare(b.time)),
+      }));
+  };
 
   const handleEdit = (item: ScheduleItem) => {
-    setEditingId(item.id)
-    setEditingItem(item)
-  }
+    setEditingId(item.id);
+    setEditingItem(item);
+  };
 
   const handleCancelEdit = () => {
-    setEditingId(null)
-    setEditingItem(null)
-  }
+    setEditingId(null);
+    setEditingItem(null);
+  };
 
   const handleSaveEdit = () => {
     if (editingItem) {
-      setScheduleItems(items => {
-        const updatedItems = items.map(item =>
+      setScheduleItems((items) => {
+        const updatedItems = items.map((item) =>
           item.id === editingItem.id ? editingItem : item
-        )
-        return updatedItems.sort(sortByDateTime)
-      })
-      setEditingId(null)
-      setEditingItem(null)
+        );
+        return updatedItems.sort(sortByDateTime);
+      });
+      setEditingId(null);
+      setEditingItem(null);
     }
-  }
+  };
 
   const handleDelete = (id: number) => {
-    setScheduleItems(items => items.filter(item => item.id !== id))
-  }
+    setScheduleItems((items) => items.filter((item) => item.id !== id));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     const newItem: ScheduleItem = {
-      id: Math.max(0, ...scheduleItems.map(item => item.id)) + 1,
+      id: Math.max(0, ...scheduleItems.map((item) => item.id)) + 1,
       date: newSchedule.date,
       time: newSchedule.time,
       title: newSchedule.title,
       location: newSchedule.location,
-      image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80" // デフォルト画像
-    }
-    setScheduleItems(items => {
-      const newItems = [...items, newItem]
-      return newItems.sort(sortByDateTime)
-    })
+      image:
+        "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80", // デフォルト画像
+    };
+    setScheduleItems((items) => {
+      const newItems = [...items, newItem];
+      return newItems.sort(sortByDateTime);
+    });
     setNewSchedule({
       date: newSchedule.date, // 日付は保持
       time: "",
       title: "",
-      location: ""
-    })
-  }
+      location: "",
+    });
+  };
 
   const moveItem = (dragIndex: number, hoverIndex: number) => {
-    setScheduleItems(prevItems => {
-      const newItems = [...prevItems]
-      const dragItem = newItems[dragIndex]
-      newItems.splice(dragIndex, 1)
-      newItems.splice(hoverIndex, 0, dragItem)
-      return reassignTimes(newItems)
-    })
-  }
+    setScheduleItems((prevItems) => {
+      const newItems = [...prevItems];
+      const dragItem = newItems[dragIndex];
+      newItems.splice(dragIndex, 1);
+      newItems.splice(hoverIndex, 0, dragItem);
+      return reassignTimes(newItems);
+    });
+  };
 
   // 日付をフォーマットする関数
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return format(date, 'M月d日(E)', { locale: ja })
-  }
+    const date = new Date(dateStr);
+    return format(date, "M月d日(E)", { locale: ja });
+  };
 
-  const groupedSchedules = groupSchedulesByDate(scheduleItems)
+  const groupedSchedules = groupSchedulesByDate(scheduleItems);
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen">
         <Navigation />
-        
+
         <main className="container pt-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -434,14 +467,22 @@ export default function CreatePlanPage() {
                       ))}
 
                       {/* Add Schedule Form */}
-                      <form onSubmit={handleSubmit} className="border-t pt-4 mt-4">
+                      <form
+                        onSubmit={handleSubmit}
+                        className="border-t pt-4 mt-4"
+                      >
                         <div className="space-y-3">
                           <div className="flex items-center gap-3">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <Input
                               type="date"
                               value={newSchedule.date}
-                              onChange={(e) => setNewSchedule({ ...newSchedule, date: e.target.value })}
+                              onChange={(e) =>
+                                setNewSchedule({
+                                  ...newSchedule,
+                                  date: e.target.value,
+                                })
+                              }
                               className="max-w-[160px]"
                             />
                           </div>
@@ -450,7 +491,12 @@ export default function CreatePlanPage() {
                             <Input
                               type="time"
                               value={newSchedule.time}
-                              onChange={(e) => setNewSchedule({ ...newSchedule, time: e.target.value })}
+                              onChange={(e) =>
+                                setNewSchedule({
+                                  ...newSchedule,
+                                  time: e.target.value,
+                                })
+                              }
                               placeholder="時間"
                               className="max-w-[120px]"
                             />
@@ -459,7 +505,12 @@ export default function CreatePlanPage() {
                             <div className="w-4" />
                             <Input
                               value={newSchedule.title}
-                              onChange={(e) => setNewSchedule({ ...newSchedule, title: e.target.value })}
+                              onChange={(e) =>
+                                setNewSchedule({
+                                  ...newSchedule,
+                                  title: e.target.value,
+                                })
+                              }
                               placeholder="タイトル"
                             />
                           </div>
@@ -467,7 +518,12 @@ export default function CreatePlanPage() {
                             <MapPin className="h-4 w-4 text-muted-foreground" />
                             <Input
                               value={newSchedule.location}
-                              onChange={(e) => setNewSchedule({ ...newSchedule, location: e.target.value })}
+                              onChange={(e) =>
+                                setNewSchedule({
+                                  ...newSchedule,
+                                  location: e.target.value,
+                                })
+                              }
                               placeholder="場所"
                             />
                           </div>
@@ -486,5 +542,5 @@ export default function CreatePlanPage() {
         </main>
       </div>
     </DndProvider>
-  )
+  );
 }
