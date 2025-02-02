@@ -1,0 +1,19 @@
+# npmやyarnでインストールされる依存パッケージ
+node_modules/
+
+# ビルドすると生成されるファイルやフォルダ
+dist/
+build/
+
+# 一般的なログファイル
+npm-debug.log
+yarn-error.log
+
+# OSによるゴミファイル
+.DS_Store
+
+# その他プロジェクトで使う隠しファイル
+.env
+
+# Next.js ビルド成果物
+front/.next/
