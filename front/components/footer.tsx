@@ -1,9 +1,10 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { MapPin, Facebook, Twitter, Instagram, Youtube } from "lucide-react"
-import { motion } from "framer-motion"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { MapPin, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 const footerLinks = {
   サービス: [
@@ -21,20 +22,34 @@ const footerLinks = {
     { label: "利用規約", href: "/terms" },
     { label: "プライバシーポリシー", href: "/privacy" },
   ],
-}
+};
 
 const socialLinks = [
   { icon: Facebook, href: "#", label: "Facebook" },
   { icon: Twitter, href: "#", label: "Twitter" },
   { icon: Instagram, href: "#", label: "Instagram" },
   { icon: Youtube, href: "#", label: "Youtube" },
-]
+];
 
 export function Footer() {
-  const pathname = usePathname()
-  const showFooter = pathname === "/" || window.innerWidth >= 768
+  const pathname = usePathname();
 
-  if (!showFooter) return null
+  // フッター表示可否を管理するフラグ
+  const [isWide, setIsWide] = useState(false);
+
+  // マウント後のみ画面幅をチェックし、状態を更新
+  useEffect(() => {
+    setIsWide(window.innerWidth >= 768);
+  }, []);
+
+  // サーバーサイドでは一旦フッターを描画し、クライアントで幅を判定
+  // pathname === "/" でなければ、最初から非表示にしておく場合は:
+  // const initialShowFooter = pathname === "/";
+  // などで調整してもOKです。
+
+  const showFooter = pathname === "/" || isWide;
+
+  if (!showFooter) return null;
 
   return (
     <footer className="bg-muted mt-auto">
@@ -47,7 +62,8 @@ export function Footer() {
               <span className="font-bold text-lg">Travel Planner</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              効率的な旅程作成から思い出の保存まで、<br className="hidden sm:block" />
+              効率的な旅程作成から思い出の保存まで、
+              <br className="hidden sm:block" />
               旅のすべてをサポートします。
             </p>
             <div className="flex space-x-4">
@@ -95,5 +111,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }
