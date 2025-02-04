@@ -33,11 +33,19 @@ jobs:
           bundler-cache: true
           working-directory: ./back
 
+      - name: Setup Database
+        working-directory: ./back
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+        run: |
+          bin/rails db:create
+          bin/rails db:migrate
+
       - name: Run backend tests
         working-directory: ./back
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
         run: |
-          bin/rails db:test:prepare
           bin/rails test
