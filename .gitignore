@@ -1,19 +1,37 @@
-# npmやyarnでインストールされる依存パッケージ
-node_modules/
+# Dependencies
+/front/node_modules
+/back/vendor
+/back/.bundle
 
-# ビルドすると生成されるファイルやフォルダ
-dist/
-build/
-
-# 一般的なログファイル
-npm-debug.log
-yarn-error.log
-
-# OSによるゴミファイル
-.DS_Store
-
-# その他プロジェクトで使う隠しファイル
+# Environment files
 .env
+.env.*
+!/front/.env.example
+!/back/.env.example
 
-# Next.js ビルド成果物
-front/.next/
+# Logs
+/back/log/*
+!/back/log/.keep
+/back/tmp/*
+!/back/tmp/.keep
+
+# Database
+/back/db/*.sqlite3
+/back/db/*.sqlite3-*
+
+# Testing
+/back/coverage
+/front/coverage
+
+# Production build
+/front/.next
+/front/build
+/front/dist
+
+# System files
+.DS_Store
+*/**/.DS_Store
+
+# IDE
+.idea
+.vscode
