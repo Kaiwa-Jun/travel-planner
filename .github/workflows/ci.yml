@@ -59,10 +59,16 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: ./front
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_ENV: test
         run: |
           npm ci
-          npm install @next/swc-linux-x64-gnu @next/swc-linux-x64-musl
+          npm install @next/swc-linux-x64-gnu
 
       - name: Run frontend tests
         working-directory: ./front
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_ENV: test
         run: npm test
