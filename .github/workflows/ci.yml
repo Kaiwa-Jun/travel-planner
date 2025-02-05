@@ -49,3 +49,26 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
         run: |
           bin/rails test
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "./front/package-lock.json"
+
+      - name: Install frontend dependencies
+        working-directory: ./front
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_ENV: test
+        run: |
+          npm ci
+          npm install @next/swc-linux-x64-gnu
+
+      - name: Run frontend tests
+        working-directory: ./front
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_ENV: test
+        run: npm test
