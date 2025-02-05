@@ -2,6 +2,16 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import HelloPage from "../app/hello/page";
 
+// console.errorをモック化
+const originalError = console.error;
+beforeAll(() => {
+  console.error = jest.fn();
+});
+
+afterAll(() => {
+  console.error = originalError;
+});
+
 // 各テスト実行前にグローバルなfetchをモック化
 beforeEach(() => {
   // fetchが呼ばれた場合、"Hello from API"というテキストを返すようにする
