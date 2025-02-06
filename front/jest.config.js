@@ -14,6 +14,13 @@ const customJestConfig = {
   transform: {
     "^.+\\.(js|jsx|ts|tsx)$": ["babel-jest", { presets: ["next/babel"] }],
   },
+  moduleDirectories: ["node_modules", "<rootDir>"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/$1",
+  },
+  transformIgnorePatterns: [
+    "/node_modules/(?!(react-dnd|react-dnd-html5-backend|dnd-core|@react-dnd|react-dnd-touch-backend)/)",
+  ],
 };
 
 module.exports = createJestConfig(customJestConfig);
