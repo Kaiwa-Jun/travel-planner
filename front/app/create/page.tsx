@@ -223,6 +223,7 @@ const DraggableScheduleItem = ({
               size="sm"
               onClick={handleCancelEdit}
               className="h-8 w-8 p-0"
+              aria-label="キャンセル"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -231,6 +232,7 @@ const DraggableScheduleItem = ({
               size="sm"
               onClick={handleSaveEdit}
               className="h-8 w-8 p-0"
+              aria-label="保存"
             >
               <Check className="h-4 w-4" />
             </Button>
@@ -255,6 +257,7 @@ const DraggableScheduleItem = ({
               size="sm"
               onClick={() => handleEdit(item)}
               className="h-8 w-8 p-0"
+              aria-label="編集"
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -263,6 +266,7 @@ const DraggableScheduleItem = ({
               size="sm"
               onClick={() => handleDelete(item.id)}
               className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+              aria-label="削除"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
