@@ -1,32 +1,126 @@
-"use client"
+"use client";
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { MapPin, Search, PlusCircle, Image, User, Settings, FileText, UserCircle2 } from 'lucide-react'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import {
+  MapPin,
+  Search,
+  PlusCircle,
+  Image,
+  User,
+  Settings,
+  FileText,
+  UserCircle2,
+  LogOut,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { motion } from 'framer-motion'
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function Navigation() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const { data: session, status } = useSession();
 
   const links = [
-    { href: '/search', label: '検索', icon: Search },
-    { href: '/create', label: 'プラン作成', icon: PlusCircle },
-    { href: '/albums', label: 'アルバム', icon: Image },
-  ]
+    { href: "/search", label: "検索", icon: Search },
+    { href: "/create", label: "プラン作成", icon: PlusCircle },
+    { href: "/albums", label: "アルバム", icon: Image },
+  ];
 
   const menuItems = [
-    { href: '/profile', label: 'マイページ', icon: User },
-    { href: '/terms', label: '利用規約', icon: FileText },
-    { href: '/privacy', label: 'プライバシーポリシー', icon: FileText },
-    { href: '/settings', label: '設定', icon: Settings },
-  ]
+    { href: "/profile", label: "マイページ", icon: User },
+    { href: "/terms", label: "利用規約", icon: FileText },
+    { href: "/privacy", label: "プライバシーポリシー", icon: FileText },
+    { href: "/settings", label: "設定", icon: Settings },
+  ];
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ callbackUrl: "/" });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // エラー表示後で追加
+    }
+  };
+
+  const renderAuthButtons = () => {
+    if (status === "loading") {
+      return null;
+    }
+
+    return (
+      <AnimatePresence mode="wait">
+        {session ? (
+          <motion.div
+            key="user-menu"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-10 w-10 p-0">
+                  <Avatar>
+                    <AvatarImage
+                      src={session.user?.image || undefined}
+                      alt={session.user?.name || "ユーザーアイコン"}
+                    />
+                    <AvatarFallback>
+                      <UserCircle2 className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {session.user?.name && (
+                  <>
+                    <div className="px-2 py-1.5 text-sm font-medium">
+                      {session.user.name}
+                    </div>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {menuItems.map(({ href, label, icon: Icon }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link href={href} className="flex items-center">
+                      <Icon className="mr-2 h-4 w-4" />
+                      <span>{label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>ログアウト</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </motion.div>
+        ) : pathname !== "/login" ? (
+          <motion.div
+            key="login-button"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Button asChild variant="default">
+              <Link href="/login">ログイン</Link>
+            </Button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    );
+  };
 
   return (
     <>
@@ -37,28 +131,7 @@ export function Navigation() {
             <MapPin className="h-6 w-6" />
             <span className="font-bold">Travel Planner</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="default" size="sm">
-              <Link href="/login">ログイン</Link>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10">
-                  <UserCircle2 className="h-6 w-6" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {menuItems.map(({ href, label, icon: Icon }) => (
-                  <DropdownMenuItem key={href} asChild>
-                    <Link href={href} className="flex items-center">
-                      <Icon className="mr-2 h-4 w-4" />
-                      <span>{label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <div className="flex items-center gap-2">{renderAuthButtons()}</div>
         </div>
       </header>
 
@@ -93,7 +166,7 @@ export function Navigation() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 className={`flex flex-col items-center space-y-1 ${
-                  pathname === '/' ? 'text-primary' : 'text-muted-foreground'
+                  pathname === "/" ? "text-primary" : "text-muted-foreground"
                 }`}
               >
                 <MapPin className="h-5 w-5" />
@@ -106,7 +179,7 @@ export function Navigation() {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   className={`flex flex-col items-center space-y-1 ${
-                    pathname === href ? 'text-primary' : 'text-muted-foreground'
+                    pathname === href ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -117,29 +190,10 @@ export function Navigation() {
           </div>
 
           <div className="ml-auto hidden md:flex items-center gap-2">
-            <Button asChild variant="default">
-              <Link href="/login">ログイン</Link>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10">
-                  <UserCircle2 className="h-6 w-6" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {menuItems.map(({ href, label, icon: Icon }) => (
-                  <DropdownMenuItem key={href} asChild>
-                    <Link href={href} className="flex items-center">
-                      <Icon className="mr-2 h-4 w-4" />
-                      <span>{label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {renderAuthButtons()}
           </div>
         </div>
       </nav>
     </>
-  )
+  );
 }
