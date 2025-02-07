@@ -1,15 +1,21 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Navigation } from "@/components/navigation"
-import { motion } from "framer-motion"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Navigation } from "@/components/navigation";
+import { motion } from "framer-motion";
+import { GoogleLoginButton } from "@/components/ui/GoogleLoginButton";
 
 export default function LoginPage() {
   return (
     <div className="min-h-screen bg-muted">
       <Navigation />
-      
+
       <main className="container flex items-center justify-center min-h-screen py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -24,9 +30,7 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full" size="lg">
-                Googleでログイン
-              </Button>
+              <GoogleLoginButton />
               <div className="text-center text-sm text-muted-foreground">
                 ログインすることで、利用規約とプライバシーポリシーに同意したことになります。
               </div>
@@ -35,5 +39,5 @@ export default function LoginPage() {
         </motion.div>
       </main>
     </div>
-  )
+  );
 }
