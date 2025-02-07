@@ -22,11 +22,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
 
 export function Navigation() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const links = [
     { href: "/search", label: "検索", icon: Search },
@@ -46,12 +47,24 @@ export function Navigation() {
   };
 
   const renderAuthButtons = () => {
+    if (status === "loading") {
+      return null;
+    }
+
     if (session) {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-10 w-10">
-              <UserCircle2 className="h-6 w-6" />
+            <Button variant="ghost" size="icon" className="h-10 w-10 p-0">
+              <Avatar>
+                <AvatarImage
+                  src={session.user?.image || undefined}
+                  alt={session.user?.name || "ユーザーアイコン"}
+                />
+                <AvatarFallback>
+                  <UserCircle2 className="h-6 w-6" />
+                </AvatarFallback>
+              </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -79,6 +92,10 @@ export function Navigation() {
           </DropdownMenuContent>
         </DropdownMenu>
       );
+    }
+
+    if (pathname === "/login") {
+      return null;
     }
 
     return (
