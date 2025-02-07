@@ -42,8 +42,13 @@ export function Navigation() {
     { href: "/settings", label: "設定", icon: Settings },
   ];
 
-  const handleLogout = () => {
-    signOut({ callbackUrl: "/" });
+  const handleLogout = async () => {
+    try {
+      await signOut({ callbackUrl: "/" });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // エラー表示後で追加
+    }
   };
 
   const renderAuthButtons = () => {
