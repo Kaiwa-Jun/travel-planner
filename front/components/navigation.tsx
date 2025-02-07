@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function Navigation() {
   const pathname = usePathname();
@@ -51,57 +51,69 @@ export function Navigation() {
       return null;
     }
 
-    if (session) {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-10 w-10 p-0">
-              <Avatar>
-                <AvatarImage
-                  src={session.user?.image || undefined}
-                  alt={session.user?.name || "ユーザーアイコン"}
-                />
-                <AvatarFallback>
-                  <UserCircle2 className="h-6 w-6" />
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {session.user?.name && (
-              <>
-                <div className="px-2 py-1.5 text-sm font-medium">
-                  {session.user.name}
-                </div>
-                <DropdownMenuSeparator />
-              </>
-            )}
-            {menuItems.map(({ href, label, icon: Icon }) => (
-              <DropdownMenuItem key={href} asChild>
-                <Link href={href} className="flex items-center">
-                  <Icon className="mr-2 h-4 w-4" />
-                  <span>{label}</span>
-                </Link>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>ログアウト</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    }
-
-    if (pathname === "/login") {
-      return null;
-    }
-
     return (
-      <Button asChild variant="default">
-        <Link href="/login">ログイン</Link>
-      </Button>
+      <AnimatePresence mode="wait">
+        {session ? (
+          <motion.div
+            key="user-menu"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-10 w-10 p-0">
+                  <Avatar>
+                    <AvatarImage
+                      src={session.user?.image || undefined}
+                      alt={session.user?.name || "ユーザーアイコン"}
+                    />
+                    <AvatarFallback>
+                      <UserCircle2 className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {session.user?.name && (
+                  <>
+                    <div className="px-2 py-1.5 text-sm font-medium">
+                      {session.user.name}
+                    </div>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                {menuItems.map(({ href, label, icon: Icon }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link href={href} className="flex items-center">
+                      <Icon className="mr-2 h-4 w-4" />
+                      <span>{label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>ログアウト</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </motion.div>
+        ) : pathname !== "/login" ? (
+          <motion.div
+            key="login-button"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Button asChild variant="default">
+              <Link href="/login">ログイン</Link>
+            </Button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     );
   };
 

@@ -8,19 +8,27 @@ export const authOptions: AuthOptions = {
   // OAuthプロバイダ設定
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId:
+        process.env.GOOGLE_CLIENT_ID ??
+        (() => {
+          throw new Error("GOOGLE_CLIENT_ID is not defined");
+        })(),
+      clientSecret:
+        process.env.GOOGLE_CLIENT_SECRET ??
+        (() => {
+          throw new Error("GOOGLE_CLIENT_SECRET is not defined");
+        })(),
     }),
   ],
 
   callbacks: {
     async jwt({ token, account, profile }) {
-      // 初回ログイン時にOAuth情報をtokenに格納する
       if (account && profile) {
         token.provider = account.provider;
         token.providerAccountId = account.providerAccountId;
+        // 必要最小限の情報のみを保持
         token.email = profile.email;
-        token.name = profile.name || profile.email?.split("@")[0];
+        token.name = profile.name;
         token.picture = (profile as { picture?: string }).picture;
       }
       return token;
