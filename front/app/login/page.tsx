@@ -10,6 +10,7 @@ import {
 import { Navigation } from "@/components/navigation";
 import { motion } from "framer-motion";
 import { GoogleLoginButton } from "@/components/ui/GoogleLoginButton";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -32,7 +33,15 @@ export default function LoginPage() {
             <CardContent className="space-y-4">
               <GoogleLoginButton />
               <div className="text-center text-sm text-muted-foreground">
-                ログインすることで、利用規約とプライバシーポリシーに同意したことになります。
+                ログインすることで、
+                <Link href="/terms" className="text-primary hover:underline">
+                  利用規約
+                </Link>
+                と
+                <Link href="/privacy" className="text-primary hover:underline">
+                  プライバシーポリシー
+                </Link>
+                に同意したことになります。
               </div>
             </CardContent>
           </Card>
