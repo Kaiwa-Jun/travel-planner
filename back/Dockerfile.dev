@@ -8,10 +8,12 @@ RUN apt-get update -qq && \
 WORKDIR /app
 
 # GemfileとGemfile.lockをコピー
-COPY Gemfile Gemfile.lock ./
+COPY Gemfile ./
+COPY Gemfile.lock ./
 
-# bundle installの実行
-RUN bundle install
+# bundle installの実行（バインドマウントされたgemを使用）
+RUN bundle config set --local path '/usr/local/bundle' && \
+    bundle install
 
 # アプリケーションのコピー
 COPY . .
