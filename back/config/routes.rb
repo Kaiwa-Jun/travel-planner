@@ -5,15 +5,28 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  get '/health', to: proc { [200, {}, ['ok']] }
-
   # API用のルート
   namespace :api do
     namespace :v1 do
-      # テスト用のエンドポイント
-      get '/hello', to: proc { [200, {}, ['Hello from Rails API!']] }
+      # ユーザー登録用エンドポイント
+      post 'signup', to: 'auth#signup'
+
+      # ログイン用エンドポイント
+      post 'login', to: 'sessions#create'
+
+      # 認証済みユーザーのみアクセス可能なプロフィール取得エンドポイント
+      get 'profile', to: 'auth#profile'
+
+      # OAuth用のエンドポイント
+      post 'oauth/google', to: 'oauth#google'
+
+      # ログアウト用エンドポイント
+      post 'logout', to: 'sessions#destroy'
     end
   end
+
+  # ヘルスチェック用エンドポイント
+  get '/health', to: proc { [200, {}, ['ok']] }
 
   # ルートパスへのアクセスを/api/v1/helloにリダイレクト
   root to: redirect('/api/v1/hello')

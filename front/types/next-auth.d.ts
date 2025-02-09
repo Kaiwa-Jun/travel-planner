@@ -6,15 +6,21 @@ import { JWT as DefaultJWT } from "next-auth/jwt";
  */
 declare module "next-auth" {
   interface Session {
-    user?: {
-      // 既存フィールド
-      name?: string | null;
+    user: {
       email?: string | null;
+      name?: string | null;
       image?: string | null;
-      // カスタム
       provider?: string;
       providerAccountId?: string;
+      backendToken?: string;
     };
+  }
+
+  interface User {
+    email?: string | null;
+    name?: string | null;
+    image?: string | null;
+    backendToken?: string;
   }
 }
 
@@ -25,6 +31,9 @@ declare module "next-auth/jwt" {
   interface JWT {
     provider?: string;
     providerAccountId?: string;
-    picture?: string;
+    email?: string | null;
+    name?: string | null;
+    picture?: string | null;
+    backendToken?: string;
   }
 }

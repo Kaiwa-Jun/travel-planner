@@ -44,10 +44,50 @@ export function Navigation() {
 
   const handleLogout = async () => {
     try {
-      await signOut({ callbackUrl: "/" });
+      // バックエンドのログアウトエンドポイントを呼び出す
+      if (session?.user?.backendToken) {
+        try {
+          console.log(
+            "Sending logout request to backend with token:",
+            session.user.backendToken
+          );
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/logout`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${session.user.backendToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error("バックエンドのログアウトに失敗しました:", errorData);
+          } else {
+            const data = await response.json();
+            console.log("バックエンドのログアウト成功:", data);
+          }
+        } catch (error) {
+          console.error(
+            "バックエンドのログアウトでエラーが発生しました:",
+            error
+          );
+        }
+      } else {
+        console.warn("No backend token found in session");
+      }
+
+      // フロントエンドのセッションをクリア
+      await signOut({
+        redirect: true,
+        callbackUrl: "/",
+      });
     } catch (error) {
-      console.error("Logout failed:", error);
-      // エラー表示後で追加
+      console.error("ログアウトに失敗しました:", error);
+      // エラーが発生した場合でもホームページにリダイレクト
+      window.location.href = "/";
     }
   };
 
