@@ -12,13 +12,16 @@ Rails.application.routes.draw do
       post 'signup', to: 'auth#signup'
 
       # ログイン用エンドポイント
-      post 'login', to: 'auth#login'
+      post 'login', to: 'sessions#create'
 
       # 認証済みユーザーのみアクセス可能なプロフィール取得エンドポイント
       get 'profile', to: 'auth#profile'
 
       # OAuth用のエンドポイント
       post 'oauth/google', to: 'oauth#google'
+
+      # ログアウト用エンドポイント
+      post 'logout', to: 'sessions#destroy'
     end
   end
 

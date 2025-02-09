@@ -1,6 +1,16 @@
 import { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
+// サーバーサイドとクライアントサイドで異なるAPIエンドポイントを使用
+const getApiUrl = () => {
+  if (typeof window === "undefined") {
+    // サーバーサイド（Next.jsサーバー）での実行
+    return "http://back:3001";
+  }
+  // クライアントサイド（ブラウザ）での実行
+  return process.env.NEXT_PUBLIC_API_URL;
+};
+
 export const authOptions: AuthOptions = {
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
@@ -25,21 +35,19 @@ export const authOptions: AuthOptions = {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/oauth/google`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                email: user.email,
-                name: user.name,
-                google_uid: account.providerAccountId,
-                image: user.image,
-              }),
-            }
-          );
+          const apiUrl = getApiUrl();
+          const response = await fetch(`${apiUrl}/api/v1/oauth/google`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+              google_uid: account.providerAccountId,
+              image: user.image,
+            }),
+          });
 
           if (!response.ok) {
             return false;
