@@ -9,13 +9,16 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       # ユーザー登録用エンドポイント
-      post '/signup', to: 'users#create'
+      post 'signup', to: 'auth#signup'
 
       # ログイン用エンドポイント
-      post '/login', to: 'sessions#create'
+      post 'login', to: 'auth#login'
 
       # 認証済みユーザーのみアクセス可能なプロフィール取得エンドポイント
-      get '/profile', to: 'users#profile'
+      get 'profile', to: 'auth#profile'
+
+      # OAuth用のエンドポイント
+      post 'oauth/google', to: 'oauth#google'
     end
   end
 

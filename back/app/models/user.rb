@@ -1,8 +1,12 @@
 class User < ApplicationRecord
-  # パスワードのハッシュ化のための機能
-  has_secure_password
+  has_secure_password validations: false
 
+  # バリデーション
   validates :email, presence: true, uniqueness: true
-  validates :provider, presence: true, if: :provider_id?
-  validates :provider_id, presence: true, if: :provider?, uniqueness: { scope: :provider }
+  validates :google_uid, uniqueness: true, allow_nil: true
+
+  # Google認証済みかどうかを確認するメソッド
+  def google_authenticated?
+    google_uid.present?
+  end
 end
