@@ -243,7 +243,7 @@ const DraggableScheduleItem = ({
         </div>
       ) : (
         <>
-          <div className="flex-grow min-w-0 max-w-[calc(100%-5rem)]">
+          <div className="flex-grow min-w-0 max-w-[calc(100%-4rem)]">
             <div className="flex items-center text-sm text-muted-foreground mb-1">
               <Clock className="h-3 w-3 mr-1" />
               <span>{item.time}</span>
@@ -437,7 +437,7 @@ export default function CreatePlanPage() {
               <h1 className="text-3xl font-bold">プラン作成</h1>
             </div>
 
-            <div className="grid md:grid-cols-[1fr,320px] gap-4 md:gap-8">
+            <div className="grid md:grid-cols-[1fr,400px] gap-4 md:gap-8">
               {/* Map Area */}
               <div className="md:order-1">
                 <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center">
