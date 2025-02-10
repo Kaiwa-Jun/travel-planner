@@ -559,48 +559,9 @@ export default function CreatePlanPage() {
               <Card className="md:order-2 w-full">
                 <CardContent className="p-4 md:p-6 flex flex-col h-[calc(100vh-200px)] overflow-hidden">
                   <h2 className="text-xl font-semibold mb-4">スケジュール</h2>
-                  <ScrollArea className="flex-1 mb-4">
-                    <div className="space-y-6" ref={scrollContainerRef}>
-                      {groupedSchedules.map(({ date, items }, groupIndex) => (
-                        <div
-                          key={date}
-                          className="space-y-3"
-                          ref={
-                            groupIndex === groupedSchedules.length - 1
-                              ? lastItemRef
-                              : undefined
-                          }
-                        >
-                          <h3 className="font-medium text-lg flex items-center gap-2 text-muted-foreground sticky top-0 bg-background py-2">
-                            <Calendar className="h-4 w-4" />
-                            {formatDate(date)}
-                          </h3>
-                          {items.map((item, index) => (
-                            <DraggableScheduleItem
-                              key={item.id}
-                              item={item}
-                              index={index}
-                              moveItem={moveItem}
-                              editingId={editingId}
-                              editingItem={editingItem}
-                              handleEdit={handleEdit}
-                              handleCancelEdit={handleCancelEdit}
-                              handleSaveEdit={handleSaveEdit}
-                              handleDelete={handleDelete}
-                              setEditingItem={setEditingItem}
-                              isNew={item.id === newItemId}
-                            />
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
 
                   {/* Add Schedule Form */}
-                  <form
-                    onSubmit={handleSubmit}
-                    className="border-t pt-3 md:pt-4"
-                  >
+                  <form onSubmit={handleSubmit} className="mb-4 pb-4 border-b">
                     <div className="space-y-2 md:space-y-3">
                       <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -652,7 +613,7 @@ export default function CreatePlanPage() {
                               className="absolute left-0 right-0 mt-1 bg-background border rounded-md shadow-lg"
                               style={{ zIndex: 9999 }}
                             >
-                              <div className="max-h-[200px] overflow-y-auto">
+                              <div className="max-h-[400px] overflow-y-auto">
                                 {suggestions.map((spot, index) => (
                                   <button
                                     key={spot.id}
@@ -706,6 +667,43 @@ export default function CreatePlanPage() {
                       </Button>
                     </div>
                   </form>
+
+                  <ScrollArea className="flex-1">
+                    <div className="space-y-6" ref={scrollContainerRef}>
+                      {groupedSchedules.map(({ date, items }, groupIndex) => (
+                        <div
+                          key={date}
+                          className="space-y-3"
+                          ref={
+                            groupIndex === groupedSchedules.length - 1
+                              ? lastItemRef
+                              : undefined
+                          }
+                        >
+                          <h3 className="font-medium text-lg flex items-center gap-2 text-muted-foreground sticky top-0 bg-background py-2">
+                            <Calendar className="h-4 w-4" />
+                            {formatDate(date)}
+                          </h3>
+                          {items.map((item, index) => (
+                            <DraggableScheduleItem
+                              key={item.id}
+                              item={item}
+                              index={index}
+                              moveItem={moveItem}
+                              editingId={editingId}
+                              editingItem={editingItem}
+                              handleEdit={handleEdit}
+                              handleCancelEdit={handleCancelEdit}
+                              handleSaveEdit={handleSaveEdit}
+                              handleDelete={handleDelete}
+                              setEditingItem={setEditingItem}
+                              isNew={item.id === newItemId}
+                            />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </CardContent>
               </Card>
 
