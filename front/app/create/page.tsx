@@ -437,24 +437,21 @@ export default function CreatePlanPage() {
 
             <div className="grid md:grid-cols-[1fr,400px] gap-8">
               {/* Map Area */}
-              <div className="space-y-4">
+              <div className="md:order-1">
                 <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center">
                   <p className="text-muted-foreground">地図が表示されます</p>
-                </div>
-                <div className="mt-8">
-                  <SavedPlans />
                 </div>
               </div>
 
               {/* Schedule Area */}
-              <Card>
-                <ScrollArea className="h-[calc(100vh-200px)]">
-                  <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold mb-4">スケジュール</h2>
+              <Card className="md:order-2">
+                <CardContent className="p-6 flex flex-col h-[calc(100vh-200px)]">
+                  <h2 className="text-xl font-semibold mb-4">スケジュール</h2>
+                  <ScrollArea className="flex-1 mb-4">
                     <div className="space-y-6">
                       {groupedSchedules.map(({ date, items }, groupIndex) => (
                         <div key={date} className="space-y-3">
-                          <h3 className="font-medium text-lg flex items-center gap-2 text-muted-foreground">
+                          <h3 className="font-medium text-lg flex items-center gap-2 text-muted-foreground sticky top-0 bg-background py-2">
                             <Calendar className="h-4 w-4" />
                             {formatDate(date)}
                           </h3>
@@ -475,78 +472,80 @@ export default function CreatePlanPage() {
                           ))}
                         </div>
                       ))}
-
-                      {/* Add Schedule Form */}
-                      <form
-                        onSubmit={handleSubmit}
-                        className="border-t pt-4 mt-4"
-                      >
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="date"
-                              value={newSchedule.date}
-                              onChange={(e) =>
-                                setNewSchedule({
-                                  ...newSchedule,
-                                  date: e.target.value,
-                                })
-                              }
-                              className="max-w-[160px]"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="time"
-                              value={newSchedule.time}
-                              onChange={(e) =>
-                                setNewSchedule({
-                                  ...newSchedule,
-                                  time: e.target.value,
-                                })
-                              }
-                              placeholder="時間"
-                              className="max-w-[120px]"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="w-4" />
-                            <Input
-                              value={newSchedule.title}
-                              onChange={(e) =>
-                                setNewSchedule({
-                                  ...newSchedule,
-                                  title: e.target.value,
-                                })
-                              }
-                              placeholder="タイトル"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <Input
-                              value={newSchedule.location}
-                              onChange={(e) =>
-                                setNewSchedule({
-                                  ...newSchedule,
-                                  location: e.target.value,
-                                })
-                              }
-                              placeholder="場所"
-                            />
-                          </div>
-                          <Button type="submit" className="w-full">
-                            <Plus className="mr-2 h-4 w-4" />
-                            スケジュールを追加
-                          </Button>
-                        </div>
-                      </form>
                     </div>
-                  </CardContent>
-                </ScrollArea>
+                  </ScrollArea>
+
+                  {/* Add Schedule Form */}
+                  <form onSubmit={handleSubmit} className="border-t pt-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="date"
+                          value={newSchedule.date}
+                          onChange={(e) =>
+                            setNewSchedule({
+                              ...newSchedule,
+                              date: e.target.value,
+                            })
+                          }
+                          className="max-w-[160px]"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="time"
+                          value={newSchedule.time}
+                          onChange={(e) =>
+                            setNewSchedule({
+                              ...newSchedule,
+                              time: e.target.value,
+                            })
+                          }
+                          placeholder="時間"
+                          className="max-w-[120px]"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4" />
+                        <Input
+                          value={newSchedule.title}
+                          onChange={(e) =>
+                            setNewSchedule({
+                              ...newSchedule,
+                              title: e.target.value,
+                            })
+                          }
+                          placeholder="タイトル"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          value={newSchedule.location}
+                          onChange={(e) =>
+                            setNewSchedule({
+                              ...newSchedule,
+                              location: e.target.value,
+                            })
+                          }
+                          placeholder="場所"
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">
+                        <Plus className="mr-2 h-4 w-4" />
+                        スケジュールを追加
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
               </Card>
+
+              {/* Saved Plans Area */}
+              <div className="md:order-3 md:col-span-2">
+                <SavedPlans />
+              </div>
             </div>
           </motion.div>
         </main>
