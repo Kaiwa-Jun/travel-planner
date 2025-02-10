@@ -153,7 +153,7 @@ const DraggableScheduleItem = ({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.1 }}
-      className={`group flex items-start gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-move ${
+      className={`group flex items-start gap-1 md:gap-2 p-2 md:p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-move ${
         isDragging ? "opacity-50" : ""
       }`}
       data-handler-id={handlerId}
@@ -161,7 +161,7 @@ const DraggableScheduleItem = ({
       <div className="flex items-center self-stretch text-muted-foreground">
         <GripVertical className="h-4 w-4" />
       </div>
-      <div className="flex-shrink-0 w-20 aspect-[4/3]">
+      <div className="flex-shrink-0 w-16 md:w-20 aspect-[4/3]">
         <div
           className="w-full h-full rounded bg-cover bg-center"
           style={{ backgroundImage: `url(${item.image})` }}
@@ -241,7 +241,7 @@ const DraggableScheduleItem = ({
         </div>
       ) : (
         <>
-          <div className="flex-grow min-w-0">
+          <div className="flex-grow min-w-0 max-w-[calc(100%-5rem)]">
             <div className="flex items-center text-sm text-muted-foreground mb-1">
               <Clock className="h-3 w-3 mr-1" />
               <span>{item.time}</span>
@@ -252,7 +252,7 @@ const DraggableScheduleItem = ({
               <span className="truncate">{item.location}</span>
             </p>
           </div>
-          <div className="flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          <div className="flex flex-col gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"
               size="sm"
@@ -424,18 +424,18 @@ export default function CreatePlanPage() {
       <div className="min-h-screen">
         <Navigation />
 
-        <main className="container pt-24">
+        <main className="container pt-24 px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="space-y-8"
+            className="space-y-8 max-w-[1200px] mx-auto"
           >
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold">プラン作成</h1>
             </div>
 
-            <div className="grid md:grid-cols-[1fr,400px] gap-8">
+            <div className="grid md:grid-cols-[1fr,320px] gap-4 md:gap-8">
               {/* Map Area */}
               <div className="md:order-1">
                 <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center">
@@ -444,8 +444,8 @@ export default function CreatePlanPage() {
               </div>
 
               {/* Schedule Area */}
-              <Card className="md:order-2">
-                <CardContent className="p-6 flex flex-col h-[calc(100vh-200px)]">
+              <Card className="md:order-2 w-full">
+                <CardContent className="p-4 md:p-6 flex flex-col h-[calc(100vh-200px)] overflow-hidden">
                   <h2 className="text-xl font-semibold mb-4">スケジュール</h2>
                   <ScrollArea className="flex-1 mb-4">
                     <div className="space-y-6">
@@ -476,8 +476,11 @@ export default function CreatePlanPage() {
                   </ScrollArea>
 
                   {/* Add Schedule Form */}
-                  <form onSubmit={handleSubmit} className="border-t pt-4">
-                    <div className="space-y-3">
+                  <form
+                    onSubmit={handleSubmit}
+                    className="border-t pt-3 md:pt-4"
+                  >
+                    <div className="space-y-2 md:space-y-3">
                       <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <Input
