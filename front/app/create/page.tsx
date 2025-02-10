@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Navigation } from "@/components/navigation";
 import { SavedPlans } from "@/components/saved-planes";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,12 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import type { Identifier } from "dnd-core";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { sampleSpots, type Spot } from "@/data/spots";
 
 interface ScheduleItem {
   id: number;
@@ -206,7 +212,7 @@ const DraggableScheduleItem = ({
                 prev ? { ...prev, title: e.target.value } : null
               )
             }
-            placeholder="タイトル"
+            placeholder="スポット名"
           />
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -295,6 +301,8 @@ export default function CreatePlanPage() {
   });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastItemRef = useRef<HTMLDivElement>(null);
+  const [suggestions, setSuggestions] = useState<Spot[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // 日付と時間でソートする関数
   const sortByDateTime = (a: ScheduleItem, b: ScheduleItem) => {
@@ -433,6 +441,44 @@ export default function CreatePlanPage() {
 
   const groupedSchedules = groupSchedulesByDate(scheduleItems);
 
+  // スポット名の入力に応じてサジェストを更新
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewSchedule({
+      ...newSchedule,
+      title: value,
+    });
+
+    if (value.length > 0) {
+      const filtered = sampleSpots.filter((spot) =>
+        spot.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // サジェストアイテムを選択
+  const handleSelectSpot = (spot: Spot) => {
+    setNewSchedule({
+      ...newSchedule,
+      title: spot.name,
+      location: spot.location,
+    });
+    setShowSuggestions(false);
+  };
+
+  // フォーカスが外れた時の処理を追加
+  const handleBlur = () => {
+    // 少し遅延を入れてポップオーバーをクリックできるようにする
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen">
@@ -534,16 +580,53 @@ export default function CreatePlanPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-4" />
-                        <Input
-                          value={newSchedule.title}
-                          onChange={(e) =>
-                            setNewSchedule({
-                              ...newSchedule,
-                              title: e.target.value,
-                            })
-                          }
-                          placeholder="タイトル"
-                        />
+                        <div className="relative w-full">
+                          <Input
+                            value={newSchedule.title}
+                            onChange={handleTitleChange}
+                            onFocus={() =>
+                              setShowSuggestions(newSchedule.title.length > 0)
+                            }
+                            onBlur={handleBlur}
+                            placeholder="タイトル"
+                          />
+                          {showSuggestions && (
+                            <div className="absolute w-full mt-1 bg-background border rounded-md shadow-lg z-50">
+                              <div className="max-h-[200px] overflow-y-auto">
+                                {suggestions.map((spot) => (
+                                  <button
+                                    key={spot.id}
+                                    className="w-full px-4 py-2 text-left hover:bg-muted flex items-center gap-2"
+                                    onClick={() => handleSelectSpot(spot)}
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()} // フォーカスが外れるのを防ぐ
+                                  >
+                                    <div
+                                      className="w-8 h-8 rounded bg-cover bg-center flex-shrink-0"
+                                      style={{
+                                        backgroundImage: `url(${spot.image})`,
+                                      }}
+                                    />
+                                    <div>
+                                      <div className="font-medium">
+                                        {spot.name}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {spot.location}
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))}
+                                {suggestions.length === 0 &&
+                                  newSchedule.title.length > 0 && (
+                                    <div className="px-4 py-2 text-sm text-muted-foreground">
+                                      該当するスポットが見つかりません
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
