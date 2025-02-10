@@ -293,6 +293,8 @@ export default function CreatePlanPage() {
     title: "",
     location: "",
   });
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastItemRef = useRef<HTMLDivElement>(null);
 
   // 日付と時間でソートする関数
   const sortByDateTime = (a: ScheduleItem, b: ScheduleItem) => {
@@ -389,18 +391,28 @@ export default function CreatePlanPage() {
       title: newSchedule.title,
       location: newSchedule.location,
       image:
-        "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80", // デフォルト画像
+        "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80",
     };
     setScheduleItems((items) => {
       const newItems = [...items, newItem];
       return newItems.sort(sortByDateTime);
     });
     setNewSchedule({
-      date: newSchedule.date, // 日付は保持
+      date: newSchedule.date,
       time: "",
       title: "",
       location: "",
     });
+
+    // スケジュール追加後、少し遅延を入れてスクロール
+    setTimeout(() => {
+      if (lastItemRef.current) {
+        lastItemRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+        });
+      }
+    }, 100);
   };
 
   const moveItem = (dragIndex: number, hoverIndex: number) => {
@@ -450,9 +462,17 @@ export default function CreatePlanPage() {
                 <CardContent className="p-4 md:p-6 flex flex-col h-[calc(100vh-200px)] overflow-hidden">
                   <h2 className="text-xl font-semibold mb-4">スケジュール</h2>
                   <ScrollArea className="flex-1 mb-4">
-                    <div className="space-y-6">
+                    <div className="space-y-6" ref={scrollContainerRef}>
                       {groupedSchedules.map(({ date, items }, groupIndex) => (
-                        <div key={date} className="space-y-3">
+                        <div
+                          key={date}
+                          className="space-y-3"
+                          ref={
+                            groupIndex === groupedSchedules.length - 1
+                              ? lastItemRef
+                              : undefined
+                          }
+                        >
                           <h3 className="font-medium text-lg flex items-center gap-2 text-muted-foreground sticky top-0 bg-background py-2">
                             <Calendar className="h-4 w-4" />
                             {formatDate(date)}
