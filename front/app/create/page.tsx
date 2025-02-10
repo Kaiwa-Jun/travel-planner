@@ -161,11 +161,13 @@ const DraggableScheduleItem = ({
       <div className="flex items-center self-stretch text-muted-foreground">
         <GripVertical className="h-4 w-4" />
       </div>
-      <div className="flex-shrink-0 w-16 md:w-20 aspect-[4/3]">
-        <div
-          className="w-full h-full rounded bg-cover bg-center"
-          style={{ backgroundImage: `url(${item.image})` }}
-        />
+      <div className="flex items-center px-2 py-4">
+        <div className="flex-shrink-0 w-20 md:w-20 aspect-[4/3]">
+          <div
+            className="w-full h-full rounded bg-cover bg-center"
+            style={{ backgroundImage: `url(${item.image})` }}
+          />
+        </div>
       </div>
       {editingId === item.id ? (
         <div className="flex-grow space-y-2">
