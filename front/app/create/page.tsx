@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Navigation } from "@/components/navigation";
+import { SavedPlans } from "@/components/saved-planes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -439,6 +440,9 @@ export default function CreatePlanPage() {
               <div className="space-y-4">
                 <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center">
                   <p className="text-muted-foreground">地図が表示されます</p>
+                </div>
+                <div className="mt-8">
+                  <SavedPlans />
                 </div>
               </div>
 
