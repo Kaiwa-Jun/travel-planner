@@ -43,7 +43,7 @@ interface ScheduleItem {
 const initialScheduleItems: ScheduleItem[] = [
   {
     id: 1,
-    date: "2024-03-20",
+    date: "2025-01-20",
     time: "10:00",
     title: "東京スカイツリー",
     location: "東京都墨田区押上",
@@ -52,7 +52,7 @@ const initialScheduleItems: ScheduleItem[] = [
   },
   {
     id: 2,
-    date: "2024-03-20",
+    date: "2025-01-20",
     time: "11:30",
     title: "浅草寺",
     location: "東京都台東区浅草",
@@ -61,7 +61,7 @@ const initialScheduleItems: ScheduleItem[] = [
   },
   {
     id: 3,
-    date: "2024-03-21",
+    date: "2025-01-21",
     time: "12:00",
     title: "上野動物園",
     location: "東京都台東区上野公園",
@@ -303,6 +303,7 @@ export default function CreatePlanPage() {
   const lastItemRef = useRef<HTMLDivElement>(null);
   const [suggestions, setSuggestions] = useState<Spot[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
 
   // 日付と時間でソートする関数
   const sortByDateTime = (a: ScheduleItem, b: ScheduleItem) => {
@@ -441,7 +442,35 @@ export default function CreatePlanPage() {
 
   const groupedSchedules = groupSchedulesByDate(scheduleItems);
 
-  // スポット名の入力に応じてサジェストを更新
+  // キーボードイベントの処理を追加
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+          handleSelectSpot(suggestions[selectedIndex]);
+        }
+        break;
+      case "Escape":
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
+
+  // 入力時の処理を修正
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNewSchedule({
@@ -455,13 +484,23 @@ export default function CreatePlanPage() {
       );
       setSuggestions(filtered);
       setShowSuggestions(filtered.length > 0);
+      setSelectedIndex(-1); // 選択状態をリセット
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
+      setSelectedIndex(-1);
     }
   };
 
-  // サジェストアイテムを選択
+  // フォーカスが外れた時の処理を修正
+  const handleBlur = () => {
+    setTimeout(() => {
+      setShowSuggestions(false);
+      setSelectedIndex(-1);
+    }, 200);
+  };
+
+  // サジェストアイテムを選択時の処理を修正
   const handleSelectSpot = (spot: Spot) => {
     setNewSchedule({
       ...newSchedule,
@@ -469,14 +508,7 @@ export default function CreatePlanPage() {
       location: spot.location,
     });
     setShowSuggestions(false);
-  };
-
-  // フォーカスが外れた時の処理を追加
-  const handleBlur = () => {
-    // 少し遅延を入れてポップオーバーをクリックできるようにする
-    setTimeout(() => {
-      setShowSuggestions(false);
-    }, 200);
+    setSelectedIndex(-1);
   };
 
   return (
@@ -584,22 +616,29 @@ export default function CreatePlanPage() {
                           <Input
                             value={newSchedule.title}
                             onChange={handleTitleChange}
+                            onKeyDown={handleKeyDown}
                             onFocus={() =>
                               setShowSuggestions(newSchedule.title.length > 0)
                             }
                             onBlur={handleBlur}
-                            placeholder="タイトル"
+                            placeholder="スポット名"
                           />
                           {showSuggestions && (
-                            <div className="absolute w-full mt-1 bg-background border rounded-md shadow-lg z-50">
+                            <div
+                              className="absolute left-0 right-0 mt-1 bg-background border rounded-md shadow-lg"
+                              style={{ zIndex: 9999 }}
+                            >
                               <div className="max-h-[200px] overflow-y-auto">
-                                {suggestions.map((spot) => (
+                                {suggestions.map((spot, index) => (
                                   <button
                                     key={spot.id}
-                                    className="w-full px-4 py-2 text-left hover:bg-muted flex items-center gap-2"
+                                    className={`w-full px-4 py-2 text-left hover:bg-muted flex items-center gap-2 ${
+                                      index === selectedIndex ? "bg-muted" : ""
+                                    }`}
                                     onClick={() => handleSelectSpot(spot)}
                                     type="button"
-                                    onMouseDown={(e) => e.preventDefault()} // フォーカスが外れるのを防ぐ
+                                    onMouseEnter={() => setSelectedIndex(index)}
+                                    onMouseDown={(e) => e.preventDefault()}
                                   >
                                     <div
                                       className="w-8 h-8 rounded bg-cover bg-center flex-shrink-0"
@@ -627,19 +666,6 @@ export default function CreatePlanPage() {
                             </div>
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <Input
-                          value={newSchedule.location}
-                          onChange={(e) =>
-                            setNewSchedule({
-                              ...newSchedule,
-                              location: e.target.value,
-                            })
-                          }
-                          placeholder="場所"
-                        />
                       </div>
                       <Button type="submit" className="w-full">
                         <Plus className="mr-2 h-4 w-4" />
