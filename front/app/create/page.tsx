@@ -87,6 +87,7 @@ interface DraggableScheduleItemProps {
   handleSaveEdit: () => void;
   handleDelete: (id: number) => void;
   setEditingItem: React.Dispatch<React.SetStateAction<ScheduleItem | null>>;
+  isNew: boolean;
 }
 
 const DraggableScheduleItem = ({
@@ -100,6 +101,7 @@ const DraggableScheduleItem = ({
   handleSaveEdit,
   handleDelete,
   setEditingItem,
+  isNew,
 }: DraggableScheduleItemProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -163,6 +165,7 @@ const DraggableScheduleItem = ({
         isDragging ? "opacity-50" : ""
       }`}
       data-handler-id={handlerId}
+      data-schedule-id={item.id}
     >
       <div className="flex items-center self-stretch text-muted-foreground">
         <GripVertical className="h-4 w-4" />
@@ -304,6 +307,7 @@ export default function CreatePlanPage() {
   const [suggestions, setSuggestions] = useState<Spot[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [newItemId, setNewItemId] = useState<number | null>(null);
 
   // 日付と時間でソートする関数
   const sortByDateTime = (a: ScheduleItem, b: ScheduleItem) => {
@@ -393,8 +397,20 @@ export default function CreatePlanPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // すべての入力欄が入力されているかチェック
+    if (
+      !newSchedule.date ||
+      !newSchedule.time ||
+      !newSchedule.title ||
+      !newSchedule.location
+    ) {
+      return;
+    }
+
+    const id = Math.max(0, ...scheduleItems.map((item) => item.id)) + 1;
     const newItem: ScheduleItem = {
-      id: Math.max(0, ...scheduleItems.map((item) => item.id)) + 1,
+      id,
       date: newSchedule.date,
       time: newSchedule.time,
       title: newSchedule.title,
@@ -412,13 +428,17 @@ export default function CreatePlanPage() {
       title: "",
       location: "",
     });
+    setNewItemId(id);
 
     // スケジュール追加後、少し遅延を入れてスクロール
     setTimeout(() => {
-      if (lastItemRef.current) {
-        lastItemRef.current.scrollIntoView({
+      const newItemElement = document.querySelector(
+        `[data-schedule-id="${id}"]`
+      );
+      if (newItemElement) {
+        newItemElement.scrollIntoView({
           behavior: "smooth",
-          block: "end",
+          block: "center",
         });
       }
     }, 100);
@@ -568,6 +588,7 @@ export default function CreatePlanPage() {
                               handleSaveEdit={handleSaveEdit}
                               handleDelete={handleDelete}
                               setEditingItem={setEditingItem}
+                              isNew={item.id === newItemId}
                             />
                           ))}
                         </div>
@@ -593,6 +614,7 @@ export default function CreatePlanPage() {
                             })
                           }
                           className="max-w-[160px]"
+                          required
                         />
                       </div>
                       <div className="flex items-center gap-3">
@@ -608,6 +630,7 @@ export default function CreatePlanPage() {
                           }
                           placeholder="時間"
                           className="max-w-[120px]"
+                          required
                         />
                       </div>
                       <div className="flex items-center gap-3">
@@ -622,6 +645,7 @@ export default function CreatePlanPage() {
                             }
                             onBlur={handleBlur}
                             placeholder="スポット名"
+                            required
                           />
                           {showSuggestions && (
                             <div
@@ -667,7 +691,16 @@ export default function CreatePlanPage() {
                           )}
                         </div>
                       </div>
-                      <Button type="submit" className="w-full">
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={
+                          !newSchedule.date ||
+                          !newSchedule.time ||
+                          !newSchedule.title ||
+                          !newSchedule.location
+                        }
+                      >
                         <Plus className="mr-2 h-4 w-4" />
                         スケジュールを追加
                       </Button>
