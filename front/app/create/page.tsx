@@ -665,9 +665,11 @@ export default function CreatePlanPage() {
       return results;
     } catch (error) {
       console.error("Google Places API エラー詳細:", {
-        errorType: error?.constructor?.name,
-        errorMessage: error?.message,
-        errorStack: error?.stack,
+        errorType:
+          error instanceof Error ? error.constructor.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack:
+          error instanceof Error ? error.stack : "スタックトレースなし",
         error: error,
       });
       return null;
@@ -805,9 +807,9 @@ export default function CreatePlanPage() {
     if (!planTitle || scheduleItems.length === 0) return;
 
     // スケジュールの日付を取得して開始日と終了日を決定
-    const dates = scheduleItems.map((item) => new Date(item.date));
-    const startDate = format(Math.min(...dates), "yyyy-MM-dd");
-    const endDate = format(Math.max(...dates), "yyyy-MM-dd");
+    const dates = scheduleItems.map((item) => new Date(item.date).getTime());
+    const startDate = format(new Date(Math.min(...dates)), "yyyy-MM-dd");
+    const endDate = format(new Date(Math.max(...dates)), "yyyy-MM-dd");
 
     // 最初のスケジュールの場所と画像を使用
     const firstSchedule = scheduleItems[0];
