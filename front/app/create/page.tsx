@@ -372,6 +372,23 @@ function ScheduleSkeleton() {
   );
 }
 
+// デバウンス用のカスタムフック
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export const dynamic = "force-dynamic";
 
 export default function CreatePlanPage() {
@@ -392,6 +409,8 @@ export default function CreatePlanPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [newItemId, setNewItemId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // 日付と時間でソートする関数
   const sortByDateTime = (a: ScheduleItem, b: ScheduleItem) => {
@@ -578,26 +597,48 @@ export default function CreatePlanPage() {
     }
   };
 
-  // 入力時の処理を修正
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setNewSchedule({
-      ...newSchedule,
-      title: value,
+  // 入力値の変更を監視して検索処理を実行
+  useEffect(() => {
+    console.log("デバウンス後の検索処理:", {
+      入力値: debouncedSearchTerm,
+      サジェスト表示: showSuggestions,
+      フィルター前のスポット数: sampleSpots.length,
+      フィルター後のスポット数: sampleSpots.filter((spot) =>
+        spot.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      ).length,
+      選択中のインデックス: selectedIndex,
     });
 
-    if (value.length > 0) {
+    if (debouncedSearchTerm.length > 0) {
       const filtered = sampleSpots.filter((spot) =>
-        spot.name.toLowerCase().includes(value.toLowerCase())
+        spot.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
       setSuggestions(filtered);
       setShowSuggestions(filtered.length > 0);
-      setSelectedIndex(-1); // 選択状態をリセット
+      setSelectedIndex(-1);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
       setSelectedIndex(-1);
     }
+  }, [debouncedSearchTerm]);
+
+  // 入力時の処理を修正
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 入力値を即時に反映
+    console.log("入力イベント（即時）:", {
+      入力値: value,
+      現在のタイトル: newSchedule.title,
+      サジェスト表示: showSuggestions,
+    });
+
+    setNewSchedule((prev) => ({
+      ...prev,
+      title: value,
+    }));
+    // 検索処理用の値を更新（デバウンス処理される）
+    setSearchTerm(value);
   };
 
   // フォーカスが外れた時の処理を修正
