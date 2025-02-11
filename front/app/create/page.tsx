@@ -695,15 +695,40 @@ export default function CreatePlanPage() {
             );
 
             // コンポーネントがアンマウントされていない場合のみ状態を更新
-            if (isSubscribed) {
-              // 既存のローカルフィルタリング処理は維持
+            if (isSubscribed && predictions) {
+              // Google Places APIの結果を使用
+              const placesResults = (
+                predictions as google.maps.places.AutocompletePrediction[]
+              ).map((prediction) => ({
+                id: prediction.place_id,
+                name: prediction.structured_formatting.main_text,
+                location: prediction.structured_formatting.secondary_text,
+                image:
+                  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80", // デフォルト画像
+              }));
+
+              // APIの結果とローカルのフィルタリング結果を組み合わせる
               const filtered = sampleSpots.filter((spot) =>
                 spot.name
                   .toLowerCase()
                   .includes(debouncedSearchTerm.toLowerCase())
               );
-              setSuggestions(filtered);
-              setShowSuggestions(filtered.length > 0);
+
+              // 重複を避けるため、APIの結果を優先
+              const combinedResults = [
+                ...placesResults,
+                ...filtered.filter(
+                  (spot) =>
+                    !placesResults.some(
+                      (prediction) =>
+                        prediction.name.toLowerCase() ===
+                        spot.name.toLowerCase()
+                    )
+                ),
+              ];
+
+              setSuggestions(combinedResults);
+              setShowSuggestions(combinedResults.length > 0);
               setSelectedIndex(-1);
             }
           }
