@@ -621,15 +621,19 @@ export default function CreatePlanPage() {
             </div>
 
             <div className="grid md:grid-cols-[1fr,400px] gap-4 md:gap-8">
-              {/* Map Area */}
-              <div className="md:order-1">
+              {/* Left Column: Map and Saved Plans */}
+              <div className="space-y-8">
+                {/* Map Area */}
                 <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center">
                   <p className="text-muted-foreground">地図が表示されます</p>
                 </div>
+
+                {/* Saved Plans Area */}
+                <SavedPlans />
               </div>
 
-              {/* Schedule Area */}
-              <Card className="md:order-2 w-full">
+              {/* Right Column: Schedule Area */}
+              <Card className="w-full h-fit">
                 <CardContent className="p-4 md:p-6 flex flex-col h-[calc(100vh-200px)] overflow-hidden">
                   <div className="flex items-center gap-4 mb-4">
                     <Input
@@ -796,11 +800,6 @@ export default function CreatePlanPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Saved Plans Area */}
-              <div className="md:order-3 md:col-span-2">
-                <SavedPlans />
-              </div>
             </div>
           </motion.div>
         </main>

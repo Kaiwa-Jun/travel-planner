@@ -152,23 +152,18 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
               <MapPin className="h-4 w-4 mr-2" />
               {plan.location}
             </div>
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-2" />
-              {plan.scheduleCount}件のスケジュール
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2" />
+                {plan.scheduleCount}件のスケジュール
+              </div>
+              <motion.div variants={buttonVariants} whileHover="hover">
+                <Button variant="ghost" size="sm" className="gap-1">
+                  編集
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </motion.div>
             </div>
-          </motion.div>
-          <motion.div
-            className="mt-4 flex justify-end"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <motion.div variants={buttonVariants} whileHover="hover">
-              <Button variant="ghost" size="sm" className="gap-1">
-                編集
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </motion.div>
           </motion.div>
         </CardContent>
       </Card>
@@ -225,7 +220,7 @@ export function SavedPlans() {
         保存したプラン
       </motion.h2>
       <motion.div
-        className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 max-w-6xl mx-auto"
         variants={containerVariants}
       >
         {plans.map((plan) => (
