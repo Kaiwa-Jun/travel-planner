@@ -160,11 +160,45 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
               <motion.div variants={buttonVariants} whileHover="hover">
                 <Button variant="ghost" size="sm" className="gap-1">
                   編集
-                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </motion.div>
             </div>
           </motion.div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// スケルトンカードコンポーネント
+function SkeletonCard() {
+  return (
+    <motion.div
+      variants={cardVariants}
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+    >
+      <Card className="overflow-hidden group">
+        <div className="aspect-[16/9] bg-muted animate-pulse" />
+        <CardContent className="p-4 space-y-3">
+          <div className="h-6 bg-muted rounded animate-pulse w-3/4" />
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <div className="h-4 w-4 bg-muted rounded mr-2 animate-pulse" />
+              <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+            </div>
+            <div className="flex items-center">
+              <div className="h-4 w-4 bg-muted rounded mr-2 animate-pulse" />
+              <div className="h-4 bg-muted rounded animate-pulse w-1/3" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="h-4 w-4 bg-muted rounded mr-2 animate-pulse" />
+                <div className="h-4 bg-muted rounded animate-pulse w-24" />
+              </div>
+              <div className="h-8 w-16 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
@@ -223,9 +257,15 @@ export function SavedPlans() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 max-w-6xl mx-auto"
         variants={containerVariants}
       >
-        {plans.map((plan) => (
-          <SavedPlanCard key={plan.id} plan={plan} />
-        ))}
+        {plans.length > 0 ? (
+          plans.map((plan) => <SavedPlanCard key={plan.id} plan={plan} />)
+        ) : (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        )}
       </motion.div>
     </motion.div>
   );
