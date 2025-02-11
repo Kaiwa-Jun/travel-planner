@@ -51,6 +51,12 @@ interface ScheduleItem {
   image: string;
 }
 
+// プラン保存用のインターフェースを追加
+interface Plan {
+  title: string;
+  schedules: ScheduleItem[];
+}
+
 const initialScheduleItems: ScheduleItem[] = [
   {
     id: 1,
@@ -333,6 +339,7 @@ export default function CreatePlanPage() {
     title: "",
     location: "",
   });
+  const [planTitle, setPlanTitle] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastItemRef = useRef<HTMLDivElement>(null);
   const [suggestions, setSuggestions] = useState<Spot[]>([]);
@@ -562,6 +569,23 @@ export default function CreatePlanPage() {
     setSelectedIndex(-1);
   };
 
+  // プラン保存のハンドラーを追加
+  const handleSavePlan = () => {
+    if (!planTitle || scheduleItems.length === 0) return;
+
+    const plan: Plan = {
+      title: planTitle,
+      schedules: scheduleItems,
+    };
+
+    // TODO: プランをバックエンドに保存する処理を実装
+    console.log("保存するプラン:", plan);
+
+    // 保存後の処理
+    setPlanTitle("");
+    setScheduleItems([]);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen">
@@ -589,7 +613,14 @@ export default function CreatePlanPage() {
               {/* Schedule Area */}
               <Card className="md:order-2 w-full">
                 <CardContent className="p-4 md:p-6 flex flex-col h-[calc(100vh-200px)] overflow-hidden">
-                  <h2 className="text-xl font-semibold mb-4">スケジュール</h2>
+                  <div className="flex items-center gap-4 mb-4">
+                    <Input
+                      placeholder="プランのタイトルを入力"
+                      value={planTitle}
+                      onChange={(e) => setPlanTitle(e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
 
                   {/* Add Schedule Form */}
                   <form onSubmit={handleSubmit} className="mb-4 pb-4 border-b">
@@ -735,6 +766,16 @@ export default function CreatePlanPage() {
                       ))}
                     </div>
                   </ScrollArea>
+
+                  <div className="mt-4 pt-4 border-t">
+                    <Button
+                      onClick={handleSavePlan}
+                      disabled={!planTitle || scheduleItems.length === 0}
+                      className="w-full"
+                    >
+                      プランを保存
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
