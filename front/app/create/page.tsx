@@ -2,7 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Navigation } from "@/components/navigation";
-import { SavedPlans } from "@/components/saved-planes";
+import {
+  SavedPlans,
+  createPlanAddedEvent,
+  type SavedPlan,
+} from "@/components/saved-planes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -573,15 +577,29 @@ export default function CreatePlanPage() {
   const handleSavePlan = () => {
     if (!planTitle || scheduleItems.length === 0) return;
 
-    const plan: Plan = {
+    // スケジュールの日付を取得して開始日と終了日を決定
+    const dates = scheduleItems.map((item) => new Date(item.date));
+    const startDate = format(Math.min(...dates), "yyyy-MM-dd");
+    const endDate = format(Math.max(...dates), "yyyy-MM-dd");
+
+    // 最初のスケジュールの場所と画像を使用
+    const firstSchedule = scheduleItems[0];
+
+    const newPlan: SavedPlan = {
+      id: Date.now(), // 一意のIDを生成
       title: planTitle,
-      schedules: scheduleItems,
+      startDate,
+      endDate,
+      location: firstSchedule.location.split("（")[0], // 都道府県名のみを使用
+      image: firstSchedule.image,
+      scheduleCount: scheduleItems.length,
     };
 
-    // TODO: プランをバックエンドに保存する処理を実装
-    console.log("保存するプラン:", plan);
+    // カスタムイベントを発火して新しいプランを追加
+    const event = createPlanAddedEvent(newPlan);
+    window.dispatchEvent(event);
 
-    // 保存後の処理
+    // フォームをリセット
     setPlanTitle("");
     setScheduleItems([]);
   };

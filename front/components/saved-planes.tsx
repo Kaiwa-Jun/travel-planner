@@ -6,6 +6,7 @@ import { ja } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Clock, Calendar, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
 
 // 保存済みプランのインターフェース
 export interface SavedPlan {
@@ -19,7 +20,7 @@ export interface SavedPlan {
 }
 
 // サンプルの保存済みプラン
-export const savedPlans: SavedPlan[] = [
+const initialSavedPlans: SavedPlan[] = [
   {
     id: 1,
     title: "東京観光プラン",
@@ -51,6 +52,14 @@ export const savedPlans: SavedPlan[] = [
     scheduleCount: 5,
   },
 ];
+
+// プラン追加用のカスタムイベント名
+export const PLAN_ADDED_EVENT = "planAdded";
+
+// プラン追加用のカスタムイベントを作成
+export const createPlanAddedEvent = (plan: SavedPlan) => {
+  return new CustomEvent(PLAN_ADDED_EVENT, { detail: plan });
+};
 
 // アニメーションのバリアント定義
 const containerVariants = {
@@ -168,6 +177,43 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
 }
 
 export function SavedPlans() {
+  const [plans, setPlans] = useState<SavedPlan[]>(initialSavedPlans);
+
+  useEffect(() => {
+    // プラン追加イベントのリスナーを設定
+    const handlePlanAdded = (event: CustomEvent<SavedPlan>) => {
+      setPlans((prevPlans) => {
+        const newPlans = [...prevPlans, event.detail];
+        // 開始日の降順でソート
+        return newPlans.sort(
+          (a, b) =>
+            new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        );
+      });
+    };
+
+    // イベントリスナーを追加
+    window.addEventListener(PLAN_ADDED_EVENT, handlePlanAdded as EventListener);
+
+    // クリーンアップ
+    return () => {
+      window.removeEventListener(
+        PLAN_ADDED_EVENT,
+        handlePlanAdded as EventListener
+      );
+    };
+  }, []);
+
+  // 初期表示時にも日付順でソート
+  useEffect(() => {
+    setPlans((prevPlans) =>
+      [...prevPlans].sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      )
+    );
+  }, []);
+
   return (
     <motion.div initial="hidden" animate="show" variants={containerVariants}>
       <motion.h2
@@ -182,7 +228,7 @@ export function SavedPlans() {
         className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
         variants={containerVariants}
       >
-        {savedPlans.map((plan) => (
+        {plans.map((plan) => (
           <SavedPlanCard key={plan.id} plan={plan} />
         ))}
       </motion.div>
