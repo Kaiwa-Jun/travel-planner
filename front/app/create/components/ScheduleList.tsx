@@ -4,8 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import {
-  DraggableScheduleItem,
+import DraggableScheduleItem, {
   type ScheduleItem,
 } from "./DraggableScheduleItem";
 import { ScheduleSkeleton } from "./ScheduleSkeleton";

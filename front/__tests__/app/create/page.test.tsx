@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import CreatePlanPage from "@/app/create/page";
 import { format } from "date-fns";
 
@@ -42,6 +42,71 @@ Object.defineProperty(global, "DataTransfer", {
   value: jest.fn(() => mockDataTransfer),
 });
 
+// スポットデータのモック
+jest.mock("@/data/spots", () => ({
+  sampleSpots: [
+    {
+      id: 1,
+      name: "東京スカイツリー",
+      location: "東京都墨田区押上1-1-2",
+      image: "https://example.com/skytree.jpg",
+    },
+  ],
+}));
+
+// Google Places APIのモック
+const mockGooglePlaces = {
+  AutocompleteService: jest.fn(() => ({
+    getPlacePredictions: jest.fn((request, callback) => {
+      callback(
+        [
+          {
+            description: "東京スカイツリー",
+            place_id: "ChIJN1t_tDeuEmsRUsoyG83frY4",
+            structured_formatting: {
+              main_text: "東京スカイツリー",
+              secondary_text: "東京都墨田区押上1-1-2",
+            },
+          },
+        ],
+        "OK"
+      );
+    }),
+  })),
+  PlacesService: jest.fn(() => ({
+    getDetails: jest.fn((request, callback) => {
+      callback(
+        {
+          name: "東京スカイツリー",
+          formatted_address: "東京都墨田区押上1-1-2",
+          geometry: {
+            location: {
+              lat: () => 35.7100627,
+              lng: () => 139.8107004,
+            },
+          },
+        },
+        "OK"
+      );
+    }),
+  })),
+  PlacesServiceStatus: {
+    OK: "OK",
+    ZERO_RESULTS: "ZERO_RESULTS",
+    OVER_QUERY_LIMIT: "OVER_QUERY_LIMIT",
+    REQUEST_DENIED: "REQUEST_DENIED",
+    INVALID_REQUEST: "INVALID_REQUEST",
+  },
+  AutocompleteSessionToken: jest.fn(),
+};
+
+// グローバルにGoogle Places APIをモック
+global.google = {
+  maps: {
+    places: mockGooglePlaces,
+  },
+} as any;
+
 describe("CreatePlanPage", () => {
   beforeEach(() => {
     // 日付をモック
@@ -68,7 +133,7 @@ describe("CreatePlanPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("新しいスケジュールを追加できる", () => {
+  it("新しいスケジュールを追加できる", async () => {
     render(<CreatePlanPage />);
 
     // 日付を入力
@@ -79,15 +144,19 @@ describe("CreatePlanPage", () => {
     const timeInput = screen.getByTestId("time-input");
     fireEvent.change(timeInput, { target: { value: "10:00" } });
 
-    // スポット名を入力
+    // スポット名を入力して選択
     const titleInput = screen.getByPlaceholderText("スポット名");
     fireEvent.change(titleInput, { target: { value: "東京スカイツリー" } });
+    fireEvent.focus(titleInput);
 
-    // 場所を入力
-    const locationInput = screen.getByTestId("location-input");
-    fireEvent.change(locationInput, {
-      target: { value: "東京都墨田区押上1-1-2" },
+    // サジェストの表示を待つ
+    await waitFor(() => {
+      expect(screen.getByText("東京スカイツリー")).toBeInTheDocument();
     });
+
+    // サジェストを選択
+    const suggestion = screen.getByText("東京スカイツリー");
+    fireEvent.click(suggestion);
 
     // 追加ボタンをクリック
     const addButton = screen.getByRole("button", {

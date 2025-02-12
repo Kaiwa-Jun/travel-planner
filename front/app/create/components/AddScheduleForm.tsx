@@ -118,16 +118,6 @@ export const AddScheduleForm = ({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="w-4" />
-          <Input
-            value={newSchedule.location}
-            onChange={(e) => onScheduleChange("location", e.target.value)}
-            placeholder="場所"
-            required
-            data-testid="location-input"
-          />
-        </div>
         <Button
           type="submit"
           className="w-full"
