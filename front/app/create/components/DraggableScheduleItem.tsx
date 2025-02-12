@@ -76,7 +76,7 @@ const DraggableScheduleItem = forwardRef<
         transition={{ duration: 0.2 }}
         style={{ opacity: isDragging ? 0.5 : 1 }}
       >
-        <Card className="p-4 mb-4 cursor-move">
+        <Card className="p-4 mb-4 cursor-move group">
           <div className="flex justify-between items-start">
             <div>
               <h3 className="font-semibold mb-2">{item.title}</h3>
@@ -95,7 +95,7 @@ const DraggableScheduleItem = forwardRef<
               variant="ghost"
               size="icon"
               onClick={() => handleDelete(item.id)}
-              className="text-destructive hover:text-destructive/90"
+              className="text-destructive hover:text-destructive/90 md:opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
