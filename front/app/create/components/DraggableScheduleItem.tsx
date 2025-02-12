@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Clock, MapPin } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,11 +93,11 @@ const DraggableScheduleItem = forwardRef<
               <h3 className="font-semibold mb-2">{item.title}</h3>
               <div className="space-y-1 text-sm text-muted-foreground">
                 <div className="flex items-center">
-                  <span className="mr-2">🕒</span>
+                  <Clock className="h-4 w-4 mr-2" />
                   {format(new Date(item.date), "yyyy年MM月dd日")} {item.time}
                 </div>
                 <div className="flex items-center">
-                  <span className="mr-2">📍</span>
+                  <MapPin className="h-4 w-4 mr-2" />
                   {item.location}
                 </div>
               </div>
