@@ -95,9 +95,9 @@ const DraggableScheduleItem = forwardRef<
               variant="ghost"
               size="icon"
               onClick={() => handleDelete(item.id)}
-              className="text-destructive hover:text-destructive/90 block md:hidden md:group-hover:block"
+              className="text-destructive hover:text-destructive/90 block md:hidden md:group-hover:block w-8 h-8 p-0"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 mx-auto" />
             </Button>
           </div>
         </Card>
