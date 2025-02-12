@@ -89,8 +89,6 @@ const sharedPlans = [
   },
 ];
 
-const MotionDiv = motion("div");
-
 export default function AlbumsPage() {
   // 日付でグループ化
   const albumsByDate = albums.reduce(
@@ -115,7 +113,7 @@ export default function AlbumsPage() {
   }, {} as Record<string, Album[]>);
 
   const AlbumCard = ({ album }: { album: Album }) => (
-    <MotionDiv whileHover={{ scale: 1.02 }} className="group">
+    <motion.div whileHover={{ scale: 1.02 }} className="group">
       <Card>
         <CardContent className="p-4">
           <div
@@ -135,7 +133,7 @@ export default function AlbumsPage() {
           </div>
         </CardContent>
       </Card>
-    </MotionDiv>
+    </motion.div>
   );
 
   return (
