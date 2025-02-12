@@ -5,6 +5,11 @@ import { type Spot } from "@/data/spots";
 import { usePlacesAutocomplete } from "./usePlacesAutocomplete";
 import { useScheduleSorting } from "./useScheduleSorting";
 
+// 住所から「日本、」を削除する関数
+const formatLocation = (location: string): string => {
+  return location.replace(/^日本、/, "");
+};
+
 export const useCreatePlanForm = () => {
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -73,7 +78,7 @@ export const useCreatePlanForm = () => {
       date: newSchedule.date,
       time: newSchedule.time,
       title: newSchedule.title,
-      location: newSchedule.location,
+      location: formatLocation(newSchedule.location),
       image:
         "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80",
     };
@@ -166,7 +171,7 @@ export const useCreatePlanForm = () => {
     setNewSchedule({
       ...newSchedule,
       title: spot.name,
-      location: spot.location || "場所未設定",
+      location: formatLocation(spot.location || "場所未設定"),
     });
     setShowSuggestions(false);
     setSelectedIndex(-1);

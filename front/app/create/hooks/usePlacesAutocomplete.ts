@@ -20,6 +20,11 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// 住所から「日本、」を削除する関数
+const formatLocation = (location: string): string => {
+  return location.replace(/^日本、/, "");
+};
+
 export const usePlacesAutocomplete = () => {
   const [suggestions, setSuggestions] = useState<Spot[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -134,17 +139,24 @@ export const usePlacesAutocomplete = () => {
               ).map((prediction) => ({
                 id: prediction.place_id,
                 name: prediction.structured_formatting.main_text,
-                location: prediction.structured_formatting.secondary_text,
+                location: formatLocation(
+                  prediction.structured_formatting.secondary_text
+                ),
                 image:
                   "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80", // デフォルト画像
               }));
 
               // APIの結果とローカルのフィルタリング結果を組み合わせる
-              const filtered = sampleSpots.filter((spot) =>
-                spot.name
-                  .toLowerCase()
-                  .includes(debouncedSearchTerm.toLowerCase())
-              );
+              const filtered = sampleSpots
+                .filter((spot) =>
+                  spot.name
+                    .toLowerCase()
+                    .includes(debouncedSearchTerm.toLowerCase())
+                )
+                .map((spot) => ({
+                  ...spot,
+                  location: formatLocation(spot.location || ""),
+                }));
 
               // 重複を避けるため、APIの結果を優先
               const combinedResults = [
@@ -168,11 +180,16 @@ export const usePlacesAutocomplete = () => {
           console.error("Places API検索エラー:", error);
           // エラーが発生した場合でもローカルフィルタリングは実行
           if (isSubscribed) {
-            const filtered = sampleSpots.filter((spot) =>
-              spot.name
-                .toLowerCase()
-                .includes(debouncedSearchTerm.toLowerCase())
-            );
+            const filtered = sampleSpots
+              .filter((spot) =>
+                spot.name
+                  .toLowerCase()
+                  .includes(debouncedSearchTerm.toLowerCase())
+              )
+              .map((spot) => ({
+                ...spot,
+                location: formatLocation(spot.location || ""),
+              }));
             setSuggestions(filtered);
             setShowSuggestions(filtered.length > 0);
             setSelectedIndex(-1);
