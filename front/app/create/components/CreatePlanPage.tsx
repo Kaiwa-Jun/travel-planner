@@ -65,14 +65,16 @@ export const CreatePlanPageContent = () => {
               <h1 className="text-3xl font-bold">プラン作成</h1>
             </div>
 
-            <div className="grid md:grid-cols-[1fr,400px] gap-4 md:gap-8">
+            <div className="flex flex-col md:grid md:grid-cols-[1fr,400px] gap-4 md:gap-8">
               <div className="space-y-8">
                 <MapSection />
-                <SavedPlans />
+                <div className="md:block hidden">
+                  <SavedPlans />
+                </div>
               </div>
 
-              <Card className="w-full h-fit">
-                <CardContent className="p-4 md:p-6 flex flex-col h-[calc(100vh-200px)] overflow-hidden">
+              <Card className="w-full h-fit order-2 md:order-none">
+                <CardContent className="p-4 md:p-6 flex flex-col h-[calc(100vh-200px)] md:h-[calc(100vh-200px)] overflow-hidden">
                   <div className="flex items-center gap-4 mb-4">
                     <Input
                       placeholder="プランのタイトルを入力"
@@ -123,6 +125,10 @@ export const CreatePlanPageContent = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              <div className="order-3 md:hidden">
+                <SavedPlans />
+              </div>
             </div>
           </motion.div>
         </main>
