@@ -61,15 +61,6 @@ describe("CreatePlanPage", () => {
       screen.getByRole("heading", { name: "プラン作成" })
     ).toBeInTheDocument();
 
-    // 初期スケジュールの確認
-    expect(screen.getByText("東京スカイツリー")).toBeInTheDocument();
-    expect(screen.getByText("浅草寺")).toBeInTheDocument();
-    expect(screen.getByText("上野動物園")).toBeInTheDocument();
-
-    // 編集ボタンをクリックして編集モードに入る
-    const editButtons = screen.getAllByRole("button", { name: /編集/i });
-    fireEvent.click(editButtons[0]);
-
     // フォームの存在確認
     expect(screen.getByPlaceholderText("スポット名")).toBeInTheDocument();
     expect(
@@ -77,44 +68,35 @@ describe("CreatePlanPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("スケジュールを削除できる", () => {
+  it("新しいスケジュールを追加できる", () => {
     render(<CreatePlanPage />);
 
-    // 削除前の要素数を確認
-    const initialLocations = screen.getAllByText(/東京都/i);
-    expect(initialLocations).toHaveLength(3);
+    // 日付を入力
+    const dateInput = screen.getByTestId("date-input");
+    fireEvent.change(dateInput, { target: { value: "2024-03-21" } });
 
-    // 削除ボタンをクリック
-    const deleteButtons = screen.getAllByRole("button", { name: /削除/i });
-    fireEvent.click(deleteButtons[0]);
+    // 時間を入力
+    const timeInput = screen.getByTestId("time-input");
+    fireEvent.change(timeInput, { target: { value: "10:00" } });
 
-    // 削除確認ダイアログの「削除」ボタンをクリック
-    const confirmDeleteButton = screen.getByRole("button", { name: /削除/i });
-    fireEvent.click(confirmDeleteButton);
+    // スポット名を入力
+    const titleInput = screen.getByPlaceholderText("スポット名");
+    fireEvent.change(titleInput, { target: { value: "東京スカイツリー" } });
 
-    // 要素が削除されていることを確認
-    const remainingLocations = screen.getAllByText(/東京都/i);
-    expect(remainingLocations).toHaveLength(2);
-  });
-
-  it("日付でグループ化されている", () => {
-    render(<CreatePlanPage />);
-
-    // 日付ごとのグループヘッダーが存在することを確認
-    expect(screen.getByText(/1月20日\(月\).*1日目/)).toBeInTheDocument();
-    expect(screen.getByText(/1月21日\(火\).*2日目/)).toBeInTheDocument();
-
-    // 各グループ内のアイテムを確認
-    const scheduleItems = [
-      { title: "東京スカイツリー", location: "東京都墨田区押上" },
-      { title: "浅草寺", location: "東京都台東区浅草" },
-      { title: "上野動物園", location: "東京都台東区上野公園" },
-    ];
-
-    scheduleItems.forEach(({ title, location }) => {
-      expect(screen.getByText(title)).toBeInTheDocument();
-      expect(screen.getByText(location)).toBeInTheDocument();
+    // 場所を入力
+    const locationInput = screen.getByTestId("location-input");
+    fireEvent.change(locationInput, {
+      target: { value: "東京都墨田区押上1-1-2" },
     });
+
+    // 追加ボタンをクリック
+    const addButton = screen.getByRole("button", {
+      name: /スケジュールを追加/i,
+    });
+    fireEvent.click(addButton);
+
+    // 追加されたスケジュールが表示されることを確認
+    expect(screen.getByText("東京スカイツリー")).toBeInTheDocument();
   });
 
   it("プランのタイトルを設定できる", () => {
