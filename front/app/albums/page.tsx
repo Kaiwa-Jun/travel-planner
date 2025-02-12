@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Calendar, Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 // Album型の例。実際にアルバムに必要なプロパティを定義してください。
 type Album = {
@@ -67,6 +68,27 @@ const albums = [
   },
 ];
 
+const sharedPlans = [
+  {
+    id: 4,
+    title: "北海道グルメ旅",
+    startDate: "2024-08-10",
+    endDate: "2024-08-15",
+    image:
+      "https://images.unsplash.com/photo-1583072469274-a9f9638b1b43?w=800&auto=format&fit=crop&q=80",
+    sharedBy: "田中さん",
+  },
+  {
+    id: 5,
+    title: "沖縄ビーチ巡り",
+    startDate: "2024-09-20",
+    endDate: "2024-09-25",
+    image:
+      "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=800&auto=format&fit=crop&q=80",
+    sharedBy: "鈴木さん",
+  },
+];
+
 export default function AlbumsPage() {
   // 日付でグループ化
   const albumsByDate = albums.reduce(
@@ -91,7 +113,7 @@ export default function AlbumsPage() {
   }, {} as Record<string, Album[]>);
 
   const AlbumCard = ({ album }: { album: Album }) => (
-    <motion.div whileHover={{ scale: 1.02 }}>
+    <motion.div whileHover={{ scale: 1.02 }} className="group">
       <Card>
         <CardContent className="p-4">
           <div
@@ -127,10 +149,12 @@ export default function AlbumsPage() {
         >
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">アルバム</h1>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              新規アルバム
-            </Button>
+            <Link href="/create">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                新規アルバム
+              </Button>
+            </Link>
           </div>
 
           <Tabs defaultValue="all">
