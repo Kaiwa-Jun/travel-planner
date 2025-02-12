@@ -1,0 +1,751 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Navigation } from "@/components/navigation";
+import {
+  SavedPlans,
+  createPlanAddedEvent,
+  type SavedPlan,
+} from "@/components/saved-plans";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import {
+  MapPin,
+  Clock,
+  Plus,
+  GripVertical,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  Calendar,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
+import { sampleSpots, type Spot } from "@/data/spots";
+import {
+  DraggableScheduleItem,
+  type ScheduleItem,
+} from "./DraggableScheduleItem";
+import { ScheduleSkeleton } from "./ScheduleSkeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+interface Plan {
+  title: string;
+  schedules: ScheduleItem[];
+}
+
+const initialScheduleItems: ScheduleItem[] = [
+  {
+    id: 1,
+    date: "2025-01-20",
+    time: "10:00",
+    title: "東京スカイツリー",
+    location: "東京都墨田区押上",
+    image:
+      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80",
+  },
+  {
+    id: 2,
+    date: "2025-01-20",
+    time: "11:30",
+    title: "浅草寺",
+    location: "東京都台東区浅草",
+    image:
+      "https://images.unsplash.com/photo-1570459027562-4a916cc6113f?w=800&auto=format&fit=crop&q=80",
+  },
+  {
+    id: 3,
+    date: "2025-01-21",
+    time: "12:00",
+    title: "上野動物園",
+    location: "東京都台東区上野公園",
+    image:
+      "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&auto=format&fit=crop&q=80",
+  },
+];
+
+// デバウンス用のカスタムフック
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+export const CreatePlanPageContent = () => {
+  const [scheduleItems, setScheduleItems] =
+    useState<ScheduleItem[]>(initialScheduleItems);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingItem, setEditingItem] = useState<ScheduleItem | null>(null);
+  const [newSchedule, setNewSchedule] = useState({
+    date: format(new Date(), "yyyy-MM-dd"),
+    time: "",
+    title: "",
+    location: "",
+  });
+  const [planTitle, setPlanTitle] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastItemRef = useRef<HTMLDivElement>(null);
+  const [suggestions, setSuggestions] = useState<Spot[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [newItemId, setNewItemId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // 日付と時間でソートする関数
+  const sortByDateTime = (a: ScheduleItem, b: ScheduleItem) => {
+    const dateTimeA = new Date(`${a.date} ${a.time}`);
+    const dateTimeB = new Date(`${b.date} ${b.time}`);
+    return dateTimeA.getTime() - dateTimeB.getTime();
+  };
+
+  // 時間を再割り当てする関数
+  const reassignTimes = (items: ScheduleItem[]) => {
+    // 日付ごとにグループ化
+    const groupedByDate = items.reduce((acc, item) => {
+      if (!acc[item.date]) {
+        acc[item.date] = [];
+      }
+      acc[item.date].push(item);
+      return acc;
+    }, {} as Record<string, ScheduleItem[]>);
+
+    // 各日付グループ内で時間を再割り当て
+    const result: ScheduleItem[] = [];
+    Object.entries(groupedByDate).forEach(([date, dateItems]) => {
+      const times = dateItems
+        .map((item) => item.time)
+        .sort((a, b) => {
+          const timeA = new Date(`1970/01/01 ${a}`);
+          const timeB = new Date(`1970/01/01 ${b}`);
+          return timeA.getTime() - timeB.getTime();
+        });
+
+      dateItems.forEach((item, index) => {
+        result.push({
+          ...item,
+          time: times[index],
+        });
+      });
+    });
+
+    return result.sort(sortByDateTime);
+  };
+
+  // 日付ごとにスケジュールをグループ化する関数
+  const groupSchedulesByDate = (items: ScheduleItem[]) => {
+    const grouped = items.reduce((acc, item) => {
+      if (!acc[item.date]) {
+        acc[item.date] = [];
+      }
+      acc[item.date].push(item);
+      return acc;
+    }, {} as Record<string, ScheduleItem[]>);
+
+    // 日付でソート
+    return Object.entries(grouped)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, items]) => ({
+        date,
+        items: items.sort((a, b) => a.time.localeCompare(b.time)),
+      }));
+  };
+
+  const handleEdit = (item: ScheduleItem) => {
+    setEditingId(item.id);
+    setEditingItem(item);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingItem(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingItem) {
+      setScheduleItems((items) => {
+        const updatedItems = items.map((item) =>
+          item.id === editingItem.id ? editingItem : item
+        );
+        return updatedItems.sort(sortByDateTime);
+      });
+      setEditingId(null);
+      setEditingItem(null);
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    setScheduleItems((items) => items.filter((item) => item.id !== id));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // すべての入力欄が入力されているかチェック
+    if (
+      !newSchedule.date ||
+      !newSchedule.time ||
+      !newSchedule.title ||
+      !newSchedule.location
+    ) {
+      return;
+    }
+
+    const id = Math.max(0, ...scheduleItems.map((item) => item.id)) + 1;
+    const newItem: ScheduleItem = {
+      id,
+      date: newSchedule.date,
+      time: newSchedule.time,
+      title: newSchedule.title,
+      location: newSchedule.location,
+      image:
+        "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80",
+    };
+    setScheduleItems((items) => {
+      const newItems = [...items, newItem];
+      return newItems.sort(sortByDateTime);
+    });
+    setNewSchedule({
+      date: newSchedule.date,
+      time: "",
+      title: "",
+      location: "",
+    });
+    setNewItemId(id);
+
+    // スケジュール追加後、少し遅延を入れてスクロール
+    setTimeout(() => {
+      const newItemElement = document.querySelector(
+        `[data-schedule-id="${id}"]`
+      );
+      if (newItemElement) {
+        newItemElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
+  };
+
+  const moveItem = (dragIndex: number, hoverIndex: number) => {
+    setScheduleItems((prevItems) => {
+      const newItems = [...prevItems];
+      const dragItem = newItems[dragIndex];
+      newItems.splice(dragIndex, 1);
+      newItems.splice(hoverIndex, 0, dragItem);
+      return reassignTimes(newItems);
+    });
+  };
+
+  // 日付をフォーマットする関数
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const dayIndex = groupedSchedules.findIndex(
+      (group) => group.date === dateStr
+    );
+    const dayNumber = dayIndex + 1;
+    return `${format(date, "M月d日(E)", { locale: ja })}  ${dayNumber}日目`;
+  };
+
+  const groupedSchedules = groupSchedulesByDate(scheduleItems);
+
+  // キーボードイベントの処理
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+          handleSelectSpot(suggestions[selectedIndex]);
+        }
+        break;
+      case "Escape":
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
+
+  // Google Places APIのオートコンプリートをテストする関数
+  const testGooglePlacesAutocomplete = async (input: string) => {
+    try {
+      // APIキーは環境変数から取得することを想定
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      console.log("APIキー確認:", {
+        apiKey: apiKey ? "設定されています" : "未設定です",
+        apiKeyLength: apiKey?.length || 0,
+      });
+
+      console.log("Google Maps API確認:", {
+        isGoogleDefined: typeof google !== "undefined",
+        isMapsAvailable: typeof google?.maps !== "undefined",
+        isPlacesAvailable: typeof google?.maps?.places !== "undefined",
+        isAutocompleteServiceAvailable:
+          typeof google?.maps?.places?.AutocompleteService !== "undefined",
+      });
+
+      // Google Places APIのJavaScript版を使用
+      const service = new google.maps.places.AutocompleteService();
+      console.log("AutocompleteService初期化:", {
+        serviceInstance: service ? "成功" : "失敗",
+      });
+
+      const request = {
+        input: input,
+        types: ["geocode", "establishment"], // より広い検索範囲を設定
+        language: "ja",
+      };
+      console.log("リクエストパラメータ:", request);
+
+      console.log("Places API呼び出し開始");
+      if (!service) {
+        console.error("AutocompleteServiceが初期化されていません");
+        return null;
+      }
+
+      if (!google?.maps?.places?.PlacesServiceStatus) {
+        console.error("Places APIのステータス定数が見つかりません");
+        return null;
+      }
+
+      const results = await new Promise((resolve, reject) => {
+        try {
+          console.log("getPlacePredictions呼び出し直前");
+          service.getPlacePredictions(request, (predictions, status) => {
+            console.log("コールバック開始 - ステータス:", status);
+
+            if (predictions) {
+              console.log("予測結果あり:", predictions.length + "件");
+              resolve(predictions);
+            } else {
+              console.log("予測結果なし");
+              resolve([]);
+            }
+          });
+        } catch (error) {
+          console.error("API呼び出しエラー:", error);
+          reject(error);
+        }
+      });
+
+      console.log("Places APIレスポンス:", results);
+      return results;
+    } catch (error) {
+      console.error("Google Places API エラー詳細:", {
+        errorType:
+          error instanceof Error ? error.constructor.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack:
+          error instanceof Error ? error.stack : "スタックトレースなし",
+        error: error,
+      });
+      return null;
+    }
+  };
+
+  // 入力値の変更を監視して検索処理を実行
+  useEffect(() => {
+    let isSubscribed = true;
+
+    const fetchPredictions = async () => {
+      console.log("デバウンス後の検索処理:", {
+        入力値: debouncedSearchTerm,
+        サジェスト表示: showSuggestions,
+        フィルター前のスポット数: sampleSpots.length,
+        フィルター後のスポット数: sampleSpots.filter((spot) =>
+          spot.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+        ).length,
+        選択中のインデックス: selectedIndex,
+      });
+
+      if (debouncedSearchTerm.length > 0) {
+        try {
+          if (isSubscribed) {
+            const predictions = await testGooglePlacesAutocomplete(
+              debouncedSearchTerm
+            );
+
+            // コンポーネントがアンマウントされていない場合のみ状態を更新
+            if (isSubscribed && predictions) {
+              // Google Places APIの結果を使用
+              const placesResults = (
+                predictions as google.maps.places.AutocompletePrediction[]
+              ).map((prediction) => ({
+                id: prediction.place_id,
+                name: prediction.structured_formatting.main_text,
+                location: prediction.structured_formatting.secondary_text,
+                image:
+                  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80", // デフォルト画像
+              }));
+
+              // APIの結果とローカルのフィルタリング結果を組み合わせる
+              const filtered = sampleSpots.filter((spot) =>
+                spot.name
+                  .toLowerCase()
+                  .includes(debouncedSearchTerm.toLowerCase())
+              );
+
+              // 重複を避けるため、APIの結果を優先
+              const combinedResults = [
+                ...placesResults,
+                ...filtered.filter(
+                  (spot) =>
+                    !placesResults.some(
+                      (prediction) =>
+                        prediction.name.toLowerCase() ===
+                        spot.name.toLowerCase()
+                    )
+                ),
+              ];
+
+              setSuggestions(combinedResults);
+              setShowSuggestions(combinedResults.length > 0);
+              setSelectedIndex(-1);
+            }
+          }
+        } catch (error) {
+          console.error("Places API検索エラー:", error);
+          // エラーが発生した場合でもローカルフィルタリングは実行
+          if (isSubscribed) {
+            const filtered = sampleSpots.filter((spot) =>
+              spot.name
+                .toLowerCase()
+                .includes(debouncedSearchTerm.toLowerCase())
+            );
+            setSuggestions(filtered);
+            setShowSuggestions(filtered.length > 0);
+            setSelectedIndex(-1);
+          }
+        }
+      } else if (isSubscribed) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+      }
+    };
+
+    fetchPredictions();
+
+    // クリーンアップ関数
+    return () => {
+      isSubscribed = false;
+    };
+  }, [debouncedSearchTerm]);
+
+  // 入力時の処理を修正
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 入力値を即時に反映
+    console.log("入力イベント（即時）:", {
+      入力値: value,
+      現在のタイトル: newSchedule.title,
+      サジェスト表示: showSuggestions,
+    });
+
+    setNewSchedule((prev) => ({
+      ...prev,
+      title: value,
+    }));
+    // 検索処理用の値を更新（デバウンス処理される）
+    setSearchTerm(value);
+  };
+
+  // フォーカスが外れた時の処理を修正
+  const handleBlur = () => {
+    setTimeout(() => {
+      setShowSuggestions(false);
+      setSelectedIndex(-1);
+    }, 200);
+  };
+
+  // サジェストアイテムを選択時の処理を修正
+  const handleSelectSpot = (spot: Spot) => {
+    setNewSchedule({
+      ...newSchedule,
+      title: spot.name,
+      location: spot.location,
+    });
+    setShowSuggestions(false);
+    setSelectedIndex(-1);
+  };
+
+  // プラン保存のハンドラーを追加
+  const handleSavePlan = () => {
+    if (!planTitle || scheduleItems.length === 0) return;
+
+    // スケジュールの日付を取得して開始日と終了日を決定
+    const dates = scheduleItems.map((item) => new Date(item.date).getTime());
+    const startDate = format(new Date(Math.min(...dates)), "yyyy-MM-dd");
+    const endDate = format(new Date(Math.max(...dates)), "yyyy-MM-dd");
+
+    // 最初のスケジュールの場所と画像を使用
+    const firstSchedule = scheduleItems[0];
+
+    const newPlan: SavedPlan = {
+      id: Date.now(), // 一意のIDを生成
+      title: planTitle,
+      startDate,
+      endDate,
+      location: firstSchedule.location.split("（")[0], // 都道府県名のみを使用
+      image: firstSchedule.image,
+      scheduleCount: scheduleItems.length,
+    };
+
+    // カスタムイベントを発火して新しいプランを追加
+    const event = createPlanAddedEvent(newPlan);
+    window.dispatchEvent(event);
+
+    // フォームをリセット
+    setPlanTitle("");
+    setScheduleItems([]);
+  };
+
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <div className="min-h-screen">
+        <Navigation />
+
+        <main className="container pt-24 px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-8 max-w-[1200px] mx-auto"
+          >
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold">プラン作成</h1>
+            </div>
+
+            <div className="grid md:grid-cols-[1fr,400px] gap-4 md:gap-8">
+              {/* Left Column: Map and Saved Plans */}
+              <div className="space-y-8">
+                {/* Map Area */}
+                <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center">
+                  <p className="text-muted-foreground">地図が表示されます</p>
+                </div>
+
+                {/* Saved Plans Area */}
+                <SavedPlans />
+              </div>
+
+              {/* Right Column: Schedule Area */}
+              <Card className="w-full h-fit">
+                <CardContent className="p-4 md:p-6 flex flex-col h-[calc(100vh-200px)] overflow-hidden">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Input
+                      placeholder="プランのタイトルを入力"
+                      value={planTitle}
+                      onChange={(e) => setPlanTitle(e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+
+                  {/* Add Schedule Form */}
+                  <form onSubmit={handleSubmit} className="mb-4 pb-4 border-b">
+                    <div className="space-y-2 md:space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="date"
+                          value={newSchedule.date}
+                          onChange={(e) =>
+                            setNewSchedule({
+                              ...newSchedule,
+                              date: e.target.value,
+                            })
+                          }
+                          className="max-w-[160px]"
+                          required
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="time"
+                          value={newSchedule.time}
+                          onChange={(e) =>
+                            setNewSchedule({
+                              ...newSchedule,
+                              time: e.target.value,
+                            })
+                          }
+                          placeholder="時間"
+                          className="max-w-[120px]"
+                          required
+                        />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4" />
+                        <div className="relative w-full">
+                          <Input
+                            value={newSchedule.title}
+                            onChange={handleTitleChange}
+                            onKeyDown={handleKeyDown}
+                            onFocus={() =>
+                              setShowSuggestions(newSchedule.title.length > 0)
+                            }
+                            onBlur={handleBlur}
+                            placeholder="スポット名"
+                            required
+                          />
+                          {showSuggestions && (
+                            <div
+                              className="absolute left-0 right-0 mt-1 bg-background border rounded-md shadow-lg"
+                              style={{ zIndex: 9999 }}
+                            >
+                              <div className="max-h-[400px] overflow-y-auto">
+                                {suggestions.map((spot, index) => (
+                                  <button
+                                    key={spot.id}
+                                    className={`w-full px-4 py-2 text-left hover:bg-muted flex items-center gap-2 ${
+                                      index === selectedIndex ? "bg-muted" : ""
+                                    }`}
+                                    onClick={() => handleSelectSpot(spot)}
+                                    type="button"
+                                    onMouseEnter={() => setSelectedIndex(index)}
+                                    onMouseDown={(e) => e.preventDefault()}
+                                  >
+                                    <div
+                                      className="w-8 h-8 rounded bg-cover bg-center flex-shrink-0"
+                                      style={{
+                                        backgroundImage: `url(${spot.image})`,
+                                      }}
+                                    />
+                                    <div>
+                                      <div className="font-medium">
+                                        {spot.name}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {spot.location}
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))}
+                                {suggestions.length === 0 &&
+                                  newSchedule.title.length > 0 && (
+                                    <div className="px-4 py-2 text-sm text-muted-foreground">
+                                      該当するスポットが見つかりません
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={
+                          !newSchedule.date ||
+                          !newSchedule.time ||
+                          !newSchedule.title ||
+                          !newSchedule.location
+                        }
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        スケジュールを追加
+                      </Button>
+                    </div>
+                  </form>
+
+                  <ScrollArea className="flex-1">
+                    <div className="space-y-6" ref={scrollContainerRef}>
+                      {scheduleItems.length > 0 ? (
+                        groupedSchedules.map(({ date, items }, groupIndex) => (
+                          <div
+                            key={date}
+                            className="space-y-3"
+                            ref={
+                              groupIndex === groupedSchedules.length - 1
+                                ? lastItemRef
+                                : undefined
+                            }
+                          >
+                            <h3 className="font-medium text-lg flex items-center gap-2 text-muted-foreground sticky top-0 bg-background py-2">
+                              <Calendar className="h-4 w-4" />
+                              {formatDate(date)}
+                            </h3>
+                            {items.map((item, index) => (
+                              <DraggableScheduleItem
+                                key={item.id}
+                                item={item}
+                                index={index}
+                                moveItem={moveItem}
+                                editingId={editingId}
+                                editingItem={editingItem}
+                                handleEdit={handleEdit}
+                                handleCancelEdit={handleCancelEdit}
+                                handleSaveEdit={handleSaveEdit}
+                                handleDelete={handleDelete}
+                                setEditingItem={setEditingItem}
+                                isNew={item.id === newItemId}
+                              />
+                            ))}
+                          </div>
+                        ))
+                      ) : (
+                        <ScheduleSkeleton />
+                      )}
+                    </div>
+                  </ScrollArea>
+
+                  <div className="mt-4 pt-4 border-t">
+                    <Button
+                      onClick={handleSavePlan}
+                      disabled={!planTitle || scheduleItems.length === 0}
+                      className="w-full"
+                    >
+                      プランを保存
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+        </main>
+      </div>
+    </DndProvider>
+  );
+};
