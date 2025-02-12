@@ -403,7 +403,14 @@ export const SavedPlans = () => {
   // 初期データの読み込み
   useEffect(() => {
     const savedPlans = localStorage.getItem(PLANS_STORAGE_KEY);
-    setPlans(savedPlans ? JSON.parse(savedPlans) : initialSavedPlans);
+    const unsortedPlans = savedPlans
+      ? JSON.parse(savedPlans)
+      : initialSavedPlans;
+    const sortedPlans = [...unsortedPlans].sort(
+      (a, b) =>
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+    setPlans(sortedPlans);
   }, []);
 
   // プラン追加イベントのリスナー
@@ -411,14 +418,21 @@ export const SavedPlans = () => {
     const handlePlanAdded = (event: CustomEvent<SavedPlan>) => {
       const newPlan = event.detail;
       setPlans((prevPlans) => {
+        let updatedPlans;
         // 編集の場合は既存のプランを更新
         if (prevPlans.some((plan) => plan.id === newPlan.id)) {
-          return prevPlans.map((plan) =>
+          updatedPlans = prevPlans.map((plan) =>
             plan.id === newPlan.id ? newPlan : plan
           );
+        } else {
+          // 新規作成の場合は配列に追加
+          updatedPlans = [...prevPlans, newPlan];
         }
-        // 新規作成の場合は配列に追加
-        return [...prevPlans, newPlan];
+        // startDateでソート
+        return updatedPlans.sort(
+          (a, b) =>
+            new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+        );
       });
     };
 
