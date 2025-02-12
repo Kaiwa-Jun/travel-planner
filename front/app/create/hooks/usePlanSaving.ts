@@ -1,12 +1,37 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { type ScheduleItem } from "../components/DraggableScheduleItem";
-import { type SavedPlan, createPlanAddedEvent } from "@/components/saved-plans";
+import {
+  type SavedPlan,
+  createPlanAddedEvent,
+  PLANS_STORAGE_KEY,
+} from "@/components/saved-plans";
 
 export const usePlanSaving = () => {
   const [planTitle, setPlanTitle] = useState("");
 
-  const handleSavePlan = (scheduleItems: ScheduleItem[]) => {
+  // 保存済みプランを読み込む
+  const loadSavedPlans = (): SavedPlan[] => {
+    if (typeof window === "undefined") return [];
+    const savedPlans = localStorage.getItem(PLANS_STORAGE_KEY);
+    return savedPlans ? JSON.parse(savedPlans) : [];
+  };
+
+  // 保存済みプランを保存
+  const savePlans = (plans: SavedPlan[]) => {
+    localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(plans));
+  };
+
+  // 編集用のプランを読み込む
+  const loadPlanForEdit = (planId: number): SavedPlan | undefined => {
+    const savedPlans = loadSavedPlans();
+    return savedPlans.find((plan) => plan.id === planId);
+  };
+
+  const handleSavePlan = (
+    scheduleItems: ScheduleItem[],
+    editPlanId?: number
+  ) => {
     if (!planTitle || scheduleItems.length === 0) return;
 
     const dates = scheduleItems.map((item) => new Date(item.date).getTime());
@@ -29,7 +54,7 @@ export const usePlanSaving = () => {
     }));
 
     const newPlan: SavedPlan = {
-      id: Date.now(),
+      id: editPlanId || Date.now(),
       title: planTitle,
       startDate,
       endDate,
@@ -39,8 +64,15 @@ export const usePlanSaving = () => {
       schedules,
     };
 
-    const event = createPlanAddedEvent(newPlan);
-    window.dispatchEvent(event);
+    // 保存済みプランを更新
+    const savedPlans = loadSavedPlans();
+    const updatedPlans = editPlanId
+      ? savedPlans.map((plan) => (plan.id === editPlanId ? newPlan : plan))
+      : [...savedPlans, newPlan];
+
+    // 保存とイベント発火
+    savePlans(updatedPlans);
+    window.dispatchEvent(createPlanAddedEvent(newPlan));
 
     setPlanTitle("");
     return true;
@@ -50,5 +82,6 @@ export const usePlanSaving = () => {
     planTitle,
     setPlanTitle,
     handleSavePlan,
+    loadPlanForEdit,
   };
 };

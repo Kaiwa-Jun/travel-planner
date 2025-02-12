@@ -1,7 +1,7 @@
 "use client";
 
 import { Navigation } from "@/components/navigation";
-import { SavedPlans } from "@/components/saved-plans";
+import { SavedPlans, PLAN_EDIT_EVENT } from "@/components/saved-plans";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,12 @@ import { AddScheduleForm } from "./AddScheduleForm";
 import { ScheduleList } from "./ScheduleList";
 import { useCreatePlanForm } from "../hooks/useCreatePlanForm";
 import { usePlanSaving } from "../hooks/usePlanSaving";
+import { useEffect, useState } from "react";
+import type { SavedPlan } from "@/components/saved-plans";
 
 export const CreatePlanPageContent = () => {
+  const [editingPlan, setEditingPlan] = useState<SavedPlan | null>(null);
+
   const {
     scheduleItems,
     setScheduleItems,
@@ -43,9 +47,38 @@ export const CreatePlanPageContent = () => {
 
   const { planTitle, setPlanTitle, handleSavePlan } = usePlanSaving();
 
+  // プラン編集イベントのリスナーを設定
+  useEffect(() => {
+    const handlePlanEdit = (event: CustomEvent<SavedPlan>) => {
+      const plan = event.detail;
+      setEditingPlan(plan);
+      setPlanTitle(plan.title);
+
+      // スケジュールデータを変換して設定
+      const convertedSchedules = plan.schedules.map((schedule) => ({
+        id: schedule.id,
+        date: schedule.date,
+        time: schedule.startTime,
+        title: schedule.title,
+        location: schedule.location,
+        image: plan.image,
+      }));
+      setScheduleItems(convertedSchedules);
+    };
+
+    window.addEventListener(PLAN_EDIT_EVENT, handlePlanEdit as EventListener);
+    return () => {
+      window.removeEventListener(
+        PLAN_EDIT_EVENT,
+        handlePlanEdit as EventListener
+      );
+    };
+  }, [setPlanTitle, setScheduleItems]);
+
   const onSavePlan = () => {
-    if (handleSavePlan(scheduleItems)) {
+    if (handleSavePlan(scheduleItems, editingPlan?.id)) {
       setScheduleItems([]);
+      setEditingPlan(null);
     }
   };
 
@@ -62,7 +95,9 @@ export const CreatePlanPageContent = () => {
             className="space-y-8 max-w-[1200px] mx-auto"
           >
             <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold">プラン作成</h1>
+              <h1 className="text-3xl font-bold">
+                {editingPlan ? "プラン編集" : "プラン作成"}
+              </h1>
             </div>
 
             <div className="flex flex-col md:grid md:grid-cols-[1fr,400px] gap-4 md:gap-8">
@@ -120,7 +155,7 @@ export const CreatePlanPageContent = () => {
                       disabled={!planTitle || scheduleItems.length === 0}
                       className="w-full"
                     >
-                      プランを保存
+                      {editingPlan ? "プランを更新" : "プランを保存"}
                     </Button>
                   </div>
                 </CardContent>

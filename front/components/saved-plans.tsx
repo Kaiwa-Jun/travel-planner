@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Clock, Calendar, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // 保存済みプランのインターフェース
 export interface SavedPlan {
@@ -229,10 +230,17 @@ const initialSavedPlans: SavedPlan[] = [
 
 // プラン追加用のカスタムイベント名
 export const PLAN_ADDED_EVENT = "planAdded";
+export const PLAN_EDIT_EVENT = "planEdit";
+export const PLANS_STORAGE_KEY = "savedPlans";
 
 // プラン追加用のカスタムイベントを作成
 export const createPlanAddedEvent = (plan: SavedPlan) => {
   return new CustomEvent(PLAN_ADDED_EVENT, { detail: plan });
+};
+
+// プラン編集用のカスタムイベントを作成
+export const createPlanEditEvent = (plan: SavedPlan) => {
+  return new CustomEvent(PLAN_EDIT_EVENT, { detail: plan });
 };
 
 // アニメーションのバリアント定義
@@ -290,6 +298,11 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
     return `${start} 〜 ${end}`;
   };
 
+  const handleEdit = () => {
+    const event = createPlanEditEvent(plan);
+    window.dispatchEvent(event);
+  };
+
   return (
     <motion.div
       variants={cardVariants}
@@ -332,7 +345,12 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
                 {plan.scheduleCount}件のスケジュール
               </div>
               <motion.div variants={buttonVariants} whileHover="hover">
-                <Button variant="ghost" size="sm" className="gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1"
+                  onClick={handleEdit}
+                >
                   編集
                 </Button>
               </motion.div>
@@ -379,42 +397,38 @@ function SkeletonCard() {
   );
 }
 
-export function SavedPlans() {
-  const [plans, setPlans] = useState<SavedPlan[]>(initialSavedPlans);
+export const SavedPlans = () => {
+  const [plans, setPlans] = useState<SavedPlan[]>([]);
 
+  // 初期データの読み込み
   useEffect(() => {
-    // プラン追加イベントのリスナーを設定
+    const savedPlans = localStorage.getItem(PLANS_STORAGE_KEY);
+    setPlans(savedPlans ? JSON.parse(savedPlans) : initialSavedPlans);
+  }, []);
+
+  // プラン追加イベントのリスナー
+  useEffect(() => {
     const handlePlanAdded = (event: CustomEvent<SavedPlan>) => {
+      const newPlan = event.detail;
       setPlans((prevPlans) => {
-        const newPlans = [...prevPlans, event.detail];
-        // 開始日の降順でソート
-        return newPlans.sort(
-          (a, b) =>
-            new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-        );
+        // 編集の場合は既存のプランを更新
+        if (prevPlans.some((plan) => plan.id === newPlan.id)) {
+          return prevPlans.map((plan) =>
+            plan.id === newPlan.id ? newPlan : plan
+          );
+        }
+        // 新規作成の場合は配列に追加
+        return [...prevPlans, newPlan];
       });
     };
 
-    // イベントリスナーを追加
     window.addEventListener(PLAN_ADDED_EVENT, handlePlanAdded as EventListener);
-
-    // クリーンアップ
     return () => {
       window.removeEventListener(
         PLAN_ADDED_EVENT,
         handlePlanAdded as EventListener
       );
     };
-  }, []);
-
-  // 初期表示時にも日付順でソート
-  useEffect(() => {
-    setPlans((prevPlans) =>
-      [...prevPlans].sort(
-        (a, b) =>
-          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-      )
-    );
   }, []);
 
   return (
@@ -431,16 +445,10 @@ export function SavedPlans() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 max-w-6xl mx-auto"
         variants={containerVariants}
       >
-        {plans.length > 0 ? (
-          plans.map((plan) => <SavedPlanCard key={plan.id} plan={plan} />)
-        ) : (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
-        )}
+        {plans.map((plan) => (
+          <SavedPlanCard key={plan.id} plan={plan} />
+        ))}
       </motion.div>
     </motion.div>
   );
-}
+};
