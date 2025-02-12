@@ -7,6 +7,17 @@ import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export interface ScheduleItem {
   id: number;
@@ -91,14 +102,41 @@ const DraggableScheduleItem = forwardRef<
                 </div>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDelete(item.id)}
-              className="text-destructive hover:text-destructive/90 block md:hidden md:group-hover:block w-8 h-8 p-0"
-            >
-              <Trash2 className="h-4 w-4 mx-auto" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive hover:text-destructive/90 block md:hidden md:group-hover:block w-8 h-8 p-0"
+                >
+                  <Trash2 className="h-4 w-4 mx-auto" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>スケジュールの削除</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    このスケジュールを削除してもよろしいですか？
+                    <div className="mt-2 p-4 bg-muted rounded-lg">
+                      <p className="font-medium">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(item.date), "yyyy年MM月dd日")}{" "}
+                        {item.time}
+                      </p>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDelete(item.id)}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    削除
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </Card>
       </motion.div>
