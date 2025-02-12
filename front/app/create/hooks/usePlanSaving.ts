@@ -15,6 +15,19 @@ export const usePlanSaving = () => {
 
     const firstSchedule = scheduleItems[0];
 
+    // スケジュールの配列を新しい形式に変換
+    const schedules = scheduleItems.map((item, index) => ({
+      id: index + 1,
+      title: item.title,
+      date: item.date,
+      startTime: item.time,
+      endTime: format(
+        new Date(`${item.date} ${item.time}`).getTime() + 2 * 60 * 60 * 1000,
+        "HH:mm"
+      ), // デフォルトで2時間後を終了時間とする
+      location: item.location,
+    }));
+
     const newPlan: SavedPlan = {
       id: Date.now(),
       title: planTitle,
@@ -23,6 +36,7 @@ export const usePlanSaving = () => {
       location: firstSchedule.location.split("（")[0],
       image: firstSchedule.image,
       scheduleCount: scheduleItems.length,
+      schedules,
     };
 
     const event = createPlanAddedEvent(newPlan);
