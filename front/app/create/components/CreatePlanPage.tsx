@@ -59,13 +59,15 @@ export const CreatePlanPageContent = () => {
       // 最初のスケジュールの都道府県を取得
       if (scheduleItems.length > 0) {
         const firstSchedule = scheduleItems[0];
-        setMapMarkers((prev) => [
-          ...prev,
-          {
-            prefectureCode: firstSchedule.prefectureCode,
-            title: planTitle,
-          },
-        ]);
+        if (firstSchedule.prefectureCode) {
+          setMapMarkers((prev) => [
+            ...prev,
+            {
+              prefectureCode: firstSchedule.prefectureCode as string,
+              title: planTitle,
+            },
+          ]);
+        }
       }
       setScheduleItems([]);
       setEditingPlan(null);
