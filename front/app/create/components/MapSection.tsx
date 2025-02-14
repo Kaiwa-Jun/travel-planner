@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { prefecturePositions } from "@/data/prefecture-positions";
 import { MapPin } from "lucide-react";
 
@@ -18,11 +18,69 @@ export const MapSection = ({ markers = [] }: MapSectionProps) => {
   const [selectedPrefecture, setSelectedPrefecture] = useState<string | null>(
     null
   );
+  const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
 
-  const handlePrefectureClick = (code: string, name: string) => {
-    setSelectedPrefecture(code);
-    console.log(`Selected prefecture: ${name} (${code})`);
-  };
+  // SVG要素の参照を取得
+  const svgRef = useCallback((node: SVGSVGElement) => {
+    if (node !== null) {
+      setSvgElement(node);
+    }
+  }, []);
+
+  // SVG座標を相対位置に変換する関数
+  const getRelativePosition = useCallback(
+    (x: number, y: number) => {
+      if (!svgElement) return null;
+
+      // SVGのビューボックスを取得
+      const viewBox = svgElement.viewBox.baseVal;
+
+      // SVG要素の実際のサイズを取得
+      const svgRect = svgElement.getBoundingClientRect();
+
+      // スケール係数を計算
+      const scaleX = svgRect.width / viewBox.width;
+      const scaleY = svgRect.height / viewBox.height;
+
+      // 変換行列の情報を取得
+      const transform = document
+        .querySelector(".svg-map")
+        ?.getAttribute("transform");
+
+      // 回転とオフセットを適用した位置を計算
+      let adjustedX = x;
+      let adjustedY = y;
+
+      // transform="matrix(1.028807, 0, 0, 1.028807, 200, -100) rotate(15, 500, 500)" の補正
+      const matrixScale = 1.028807;
+      const translateX = 200;
+      const translateY = -100;
+      const rotateAngle = 15;
+      const rotateOriginX = 500;
+      const rotateOriginY = 500;
+
+      // マトリックス変換を適用
+      adjustedX = adjustedX * matrixScale + translateX;
+      adjustedY = adjustedY * matrixScale + translateY;
+
+      // 回転の中心点からの相対位置を計算
+      const dx = adjustedX - rotateOriginX;
+      const dy = adjustedY - rotateOriginY;
+
+      // 回転を適用
+      const angle = (rotateAngle * Math.PI) / 180;
+      const rotatedX =
+        rotateOriginX + (dx * Math.cos(angle) - dy * Math.sin(angle));
+      const rotatedY =
+        rotateOriginY + (dx * Math.sin(angle) + dy * Math.cos(angle));
+
+      return {
+        x: `${(rotatedX / viewBox.width) * 100}%`,
+        y: `${(rotatedY / viewBox.height) * 100}%`,
+      };
+    },
+    [svgElement]
+  );
 
   useEffect(() => {
     // 各都道府県要素を取得して中心位置を計算
@@ -67,6 +125,7 @@ export const MapSection = ({ markers = [] }: MapSectionProps) => {
         }
       `}</style>
       <svg
+        ref={svgRef}
         className="geolonia-svg-map"
         viewBox="0 0 1400 900"
         xmlns="http://www.w3.org/2000/svg"
@@ -731,16 +790,23 @@ export const MapSection = ({ markers = [] }: MapSectionProps) => {
         );
         if (!position) return null;
 
+        const point = getRelativePosition(
+          position.position.x,
+          position.position.y
+        );
+        if (!point) return null;
+
         return (
           <motion.div
             key={`${marker.prefectureCode}-${marker.title}`}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 group"
+            className="absolute z-10 group"
             style={{
-              left: `${(position.position.x / 1400) * 100}%`,
-              top: `${(position.position.y / 900) * 100}%`,
+              left: point.x,
+              top: point.y,
+              transform: "translate(-50%, -50%)",
             }}
             title={marker.title}
           >
