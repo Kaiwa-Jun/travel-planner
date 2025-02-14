@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { prefecturePositions } from "@/data/prefecture-positions";
 import { MapPin } from "lucide-react";
 
@@ -102,6 +102,23 @@ export const MapSection = ({ markers = [] }: MapSectionProps) => {
       }
     });
   }, []);
+
+  // 都道府県ごとにマーカーをグループ化
+  const groupedMarkers = useMemo(() => {
+    const groups = new Map<string, { count: number; markers: MapMarker[] }>();
+
+    markers.forEach((marker) => {
+      const existing = groups.get(marker.prefectureCode);
+      if (existing) {
+        existing.count += 1;
+        existing.markers.push(marker);
+      } else {
+        groups.set(marker.prefectureCode, { count: 1, markers: [marker] });
+      }
+    });
+
+    return groups;
+  }, [markers]);
 
   return (
     <motion.div
@@ -784,41 +801,73 @@ export const MapSection = ({ markers = [] }: MapSectionProps) => {
       </svg>
 
       {/* マップマーカー */}
-      {markers.map((marker) => {
-        const position = prefecturePositions.find(
-          (p) => p.code === marker.prefectureCode
-        );
-        if (!position) return null;
+      {Array.from(groupedMarkers.entries()).map(
+        ([prefCode, { count, markers }]) => {
+          const position = prefecturePositions.find((p) => p.code === prefCode);
+          if (!position) return null;
 
-        const point = getRelativePosition(
-          position.position.x,
-          position.position.y
-        );
-        if (!point) return null;
+          const point = getRelativePosition(
+            position.position.x,
+            position.position.y
+          );
+          if (!point) return null;
 
-        return (
-          <motion.div
-            key={`${marker.prefectureCode}-${marker.title}`}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="absolute z-10 group"
-            style={{
-              left: point.x,
-              top: point.y,
-              transform: "translate(-50%, -50%)",
-            }}
-            title={marker.title}
-          >
-            <div className="relative">
-              <MapPin className="w-3 h-3 text-primary" />
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-background border rounded-md px-2 py-1 text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                {marker.title}
+          return (
+            <motion.div
+              key={prefCode}
+              initial={{ scale: 0, y: -10 }}
+              animate={{
+                scale: 1,
+                y: 0,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 15,
+                mass: 0.8,
+              }}
+              whileHover={{
+                scale: 1.2,
+                transition: {
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 10,
+                },
+              }}
+              className="absolute z-10 group"
+              style={{
+                left: point.x,
+                top: point.y,
+                transform: "translate(-50%, -50%)",
+              }}
+            >
+              <div className="relative">
+                <motion.div
+                  animate={{
+                    y: [0, -3, 0],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 2,
+                    ease: "easeInOut",
+                  }}
+                  className="relative"
+                >
+                  <MapPin className="w-5 h-5 text-primary" />
+                  {count > 1 && (
+                    <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-medium">
+                      {count}
+                    </div>
+                  )}
+                </motion.div>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-background border rounded-md px-2 py-1 text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                  {markers.map((m) => m.title).join(", ")}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        );
-      })}
+            </motion.div>
+          );
+        }
+      )}
     </motion.div>
   );
 };
