@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Clock, Calendar, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { type SavedPlan, type Schedule } from "@/types/schedule";
 
 // 保存済みプランのインターフェース
 export interface SavedPlan {
@@ -29,6 +30,7 @@ interface Schedule {
   endTime: string;
   location: string;
   memo?: string;
+  prefectureCode: string;
 }
 
 // サンプルの保存済みプラン
@@ -51,6 +53,7 @@ const initialSavedPlans: SavedPlan[] = [
         endTime: "11:00",
         location: "浅草寺",
         memo: "朝早めに行って混雑を避ける",
+        prefectureCode: "13",
       },
       {
         id: 2,
@@ -59,6 +62,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "13:00",
         endTime: "15:00",
         location: "東京スカイツリー",
+        prefectureCode: "13",
       },
       {
         id: 3,
@@ -67,6 +71,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "10:00",
         endTime: "14:00",
         location: "秋葉原",
+        prefectureCode: "13",
       },
       {
         id: 4,
@@ -75,6 +80,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "15:00",
         endTime: "17:00",
         location: "豊洲",
+        prefectureCode: "13",
       },
       {
         id: 5,
@@ -83,6 +89,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "08:00",
         endTime: "10:00",
         location: "築地",
+        prefectureCode: "13",
       },
       {
         id: 6,
@@ -91,6 +98,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "11:00",
         endTime: "13:00",
         location: "皇居",
+        prefectureCode: "13",
       },
       {
         id: 7,
@@ -99,6 +107,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "14:00",
         endTime: "17:00",
         location: "銀座",
+        prefectureCode: "13",
       },
       {
         id: 8,
@@ -107,6 +116,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "18:00",
         endTime: "20:00",
         location: "六本木",
+        prefectureCode: "13",
       },
     ],
   },
@@ -127,6 +137,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "09:00",
         endTime: "11:00",
         location: "金閣寺",
+        prefectureCode: "26",
       },
       {
         id: 2,
@@ -135,6 +146,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "13:00",
         endTime: "15:00",
         location: "龍安寺",
+        prefectureCode: "26",
       },
       {
         id: 3,
@@ -144,6 +156,7 @@ const initialSavedPlans: SavedPlan[] = [
         endTime: "11:00",
         location: "伏見稲荷大社",
         memo: "千本鳥居を散策",
+        prefectureCode: "26",
       },
       {
         id: 4,
@@ -152,6 +165,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "14:00",
         endTime: "16:00",
         location: "清水寺",
+        prefectureCode: "26",
       },
       {
         id: 5,
@@ -160,6 +174,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "10:00",
         endTime: "12:00",
         location: "祇園",
+        prefectureCode: "26",
       },
       {
         id: 6,
@@ -169,6 +184,7 @@ const initialSavedPlans: SavedPlan[] = [
         endTime: "17:00",
         location: "嵐山",
         memo: "竹林の小径を散策",
+        prefectureCode: "26",
       },
     ],
   },
@@ -189,6 +205,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "10:00",
         endTime: "12:00",
         location: "黒門市場",
+        prefectureCode: "27",
       },
       {
         id: 2,
@@ -198,6 +215,7 @@ const initialSavedPlans: SavedPlan[] = [
         endTime: "18:00",
         location: "道頓堀",
         memo: "たこ焼きと串カツを堪能",
+        prefectureCode: "27",
       },
       {
         id: 3,
@@ -206,6 +224,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "09:00",
         endTime: "12:00",
         location: "大阪城",
+        prefectureCode: "27",
       },
       {
         id: 4,
@@ -214,6 +233,7 @@ const initialSavedPlans: SavedPlan[] = [
         startTime: "14:00",
         endTime: "17:00",
         location: "新世界",
+        prefectureCode: "27",
       },
       {
         id: 5,
@@ -223,6 +243,7 @@ const initialSavedPlans: SavedPlan[] = [
         endTime: "13:00",
         location: "あべのハルカス",
         memo: "展望台から大阪の街並みを一望",
+        prefectureCode: "27",
       },
     ],
   },

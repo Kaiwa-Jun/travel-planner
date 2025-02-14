@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Clock, MapPin, Pencil, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { usePlacesAutocomplete } from "../hooks/usePlacesAutocomplete";
+import { type ScheduleItem } from "@/types/schedule";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,15 +21,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-export interface ScheduleItem {
-  id: number;
-  date: string;
-  time: string;
-  title: string;
-  location: string;
-  image: string;
-}
 
 interface DraggableScheduleItemProps {
   item: ScheduleItem;

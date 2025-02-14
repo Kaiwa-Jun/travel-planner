@@ -51,6 +51,7 @@ export const usePlanSaving = () => {
         "HH:mm"
       ), // デフォルトで2時間後を終了時間とする
       location: item.location,
+      prefectureCode: item.prefectureCode || "13", // デフォルトは東京
     }));
 
     const newPlan: SavedPlan = {

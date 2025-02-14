@@ -1,9 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { prefecturePositions } from "@/data/prefecture-positions";
+import { MapPin } from "lucide-react";
 
-export const MapSection = () => {
+type MapMarker = {
+  prefectureCode: string;
+  title: string;
+};
+
+type MapSectionProps = {
+  markers?: MapMarker[];
+};
+
+export const MapSection = ({ markers = [] }: MapSectionProps) => {
   const [selectedPrefecture, setSelectedPrefecture] = useState<string | null>(
     null
   );
@@ -13,12 +24,33 @@ export const MapSection = () => {
     console.log(`Selected prefecture: ${name} (${code})`);
   };
 
+  useEffect(() => {
+    // 各都道府県要素を取得して中心位置を計算
+    const prefectures = document.querySelectorAll(".prefecture");
+    prefectures.forEach((prefecture) => {
+      const element = prefecture as unknown as SVGGElement;
+      const code = element.getAttribute("data-code");
+      const title = element.querySelector("title")?.textContent;
+      if (code && title && element.getBBox) {
+        const bbox = element.getBBox();
+        // SVGの変換行列とrotateを考慮した位置を計算
+        const centerX = Math.round(bbox.x + bbox.width / 2);
+        const centerY = Math.round(bbox.y + bbox.height / 2);
+        console.log(
+          `{ code: "${code}", name: "${
+            title.split(" / ")[0]
+          }", position: { x: ${centerX}, y: ${centerY} } },`
+        );
+      }
+    });
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="aspect-[2/1] max-w-3xl bg-muted rounded-lg flex items-center justify-center p-4"
+      className="aspect-[2/1] max-w-3xl bg-muted rounded-lg flex items-center justify-center p-4 relative"
     >
       <style jsx>{`
         .prefecture {
@@ -118,7 +150,7 @@ export const MapSection = () => {
               transform="translate(163.000000, 771.000000)"
             >
               <title>大分 / Oita</title>
-              <polygon points="0 34 3 29 0 26 2 24 1 19 5 13 12 9 19 10 20 3 33 7 38 0 47 4 49 10 46 18 43 17 43 20 35 22 36 26 40 28 56 27 50 36 56 36 53 38 56 40 61 38 62 41 57 41 55 45 65 49 59 49 61 51 57 54 60 55 54 56 54 60 52 60 52 55 48 54 45 58 37 58 32 53 27 54 25 53 21 49 22 43 15 30 9 30 10 36 8 39" />
+              <polygon points="0 34 3 29 0 26 2 24 1 19 5 13 12 9 19 10 20 3 33 7 38 0 47 4 49 10 46 18 43 17 43 20 35 22 36 26 40 28 56 27 50 36 56 36 53 38 56 40 61 38 62 41 57 41 55 45 65 49 59 49 61 51 57 54 60 55 54 60 52 60 52 55 48 54 45 58 37 58 32 53 27 54 25 53 21 49 22 43 15 30 9 30 10 36 8 39" />
             </g>
             <g
               className="kumamoto kyusyu kyusyu-okinawa prefecture"
@@ -691,6 +723,36 @@ export const MapSection = () => {
           </g>
         </g>
       </svg>
+
+      {/* マップマーカー */}
+      {markers.map((marker) => {
+        const position = prefecturePositions.find(
+          (p) => p.code === marker.prefectureCode
+        );
+        if (!position) return null;
+
+        return (
+          <motion.div
+            key={`${marker.prefectureCode}-${marker.title}`}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 group"
+            style={{
+              left: `${(position.position.x / 1400) * 100}%`,
+              top: `${(position.position.y / 900) * 100}%`,
+            }}
+            title={marker.title}
+          >
+            <div className="relative">
+              <MapPin className="w-3 h-3 text-primary" />
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 bg-background border rounded-md px-2 py-1 text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                {marker.title}
+              </div>
+            </div>
+          </motion.div>
+        );
+      })}
     </motion.div>
   );
 };
