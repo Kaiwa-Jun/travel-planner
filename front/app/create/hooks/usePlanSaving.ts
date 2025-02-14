@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { type ScheduleItem } from "../components/DraggableScheduleItem";
+import type { ScheduleItem, SavedPlan } from "@/types/schedule";
 import {
-  type SavedPlan,
   createPlanAddedEvent,
   PLANS_STORAGE_KEY,
 } from "@/components/saved-plans";

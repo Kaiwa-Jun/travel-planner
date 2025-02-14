@@ -14,7 +14,7 @@ import { ScheduleList } from "./ScheduleList";
 import { useCreatePlanForm } from "../hooks/useCreatePlanForm";
 import { usePlanSaving } from "../hooks/usePlanSaving";
 import { useEffect, useState } from "react";
-import type { SavedPlan } from "@/components/saved-plans";
+import type { SavedPlan } from "@/types/schedule";
 
 type MapMarker = {
   prefectureCode: string;

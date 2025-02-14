@@ -10,29 +10,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { type SavedPlan, type Schedule } from "@/types/schedule";
 
-// 保存済みプランのインターフェース
-export interface SavedPlan {
-  id: number;
-  title: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  image: string;
-  scheduleCount: number;
-  schedules: Schedule[];
-}
-
-interface Schedule {
-  id: number;
-  title: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-  memo?: string;
-  prefectureCode: string;
-}
-
 // サンプルの保存済みプラン
 const initialSavedPlans: SavedPlan[] = [
   {
