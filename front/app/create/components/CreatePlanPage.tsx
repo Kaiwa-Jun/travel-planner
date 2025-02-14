@@ -14,10 +14,16 @@ import { ScheduleList } from "./ScheduleList";
 import { useCreatePlanForm } from "../hooks/useCreatePlanForm";
 import { usePlanSaving } from "../hooks/usePlanSaving";
 import { useEffect, useState } from "react";
-import type { SavedPlan } from "@/components/saved-plans";
+import type { SavedPlan } from "@/types/schedule";
+
+type MapMarker = {
+  prefectureCode: string;
+  title: string;
+};
 
 export const CreatePlanPageContent = () => {
   const [editingPlan, setEditingPlan] = useState<SavedPlan | null>(null);
+  const [mapMarkers, setMapMarkers] = useState<MapMarker[]>([]);
 
   const {
     scheduleItems,
@@ -47,6 +53,27 @@ export const CreatePlanPageContent = () => {
 
   const { planTitle, setPlanTitle, handleSavePlan } = usePlanSaving();
 
+  // プラン保存時のマーカー追加処理
+  const onSavePlan = () => {
+    if (handleSavePlan(scheduleItems, editingPlan?.id)) {
+      // 最初のスケジュールの都道府県を取得
+      if (scheduleItems.length > 0) {
+        const firstSchedule = scheduleItems[0];
+        if (firstSchedule.prefectureCode) {
+          setMapMarkers((prev) => [
+            ...prev,
+            {
+              prefectureCode: firstSchedule.prefectureCode as string,
+              title: planTitle,
+            },
+          ]);
+        }
+      }
+      setScheduleItems([]);
+      setEditingPlan(null);
+    }
+  };
+
   // プラン編集イベントのリスナーを設定
   useEffect(() => {
     const handlePlanEdit = (event: CustomEvent<SavedPlan>) => {
@@ -61,6 +88,7 @@ export const CreatePlanPageContent = () => {
         time: schedule.startTime,
         title: schedule.title,
         location: schedule.location,
+        prefectureCode: schedule.prefectureCode,
         image: plan.image,
       }));
       setScheduleItems(convertedSchedules);
@@ -74,13 +102,6 @@ export const CreatePlanPageContent = () => {
       );
     };
   }, [setPlanTitle, setScheduleItems]);
-
-  const onSavePlan = () => {
-    if (handleSavePlan(scheduleItems, editingPlan?.id)) {
-      setScheduleItems([]);
-      setEditingPlan(null);
-    }
-  };
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -102,7 +123,7 @@ export const CreatePlanPageContent = () => {
 
             <div className="flex flex-col md:grid md:grid-cols-[1fr,400px] gap-4 md:gap-8">
               <div className="space-y-8">
-                <MapSection />
+                <MapSection markers={mapMarkers} />
                 <div className="md:block hidden">
                   <SavedPlans />
                 </div>

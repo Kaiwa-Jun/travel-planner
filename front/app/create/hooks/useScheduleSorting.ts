@@ -1,4 +1,4 @@
-import { type ScheduleItem } from "../components/DraggableScheduleItem";
+import type { ScheduleItem } from "@/types/schedule";
 
 export const useScheduleSorting = () => {
   // 日付と時間でソートする関数
