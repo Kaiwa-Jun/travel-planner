@@ -16,6 +16,8 @@ import { usePlanSaving } from "../hooks/usePlanSaving";
 import { useEffect, useState } from "react";
 import type { SavedPlan } from "@/types/schedule";
 
+const MAP_MARKERS_KEY = "map-markers";
+
 type MapMarker = {
   prefectureCode: string;
   title: string;
@@ -23,7 +25,19 @@ type MapMarker = {
 
 export const CreatePlanPageContent = () => {
   const [editingPlan, setEditingPlan] = useState<SavedPlan | null>(null);
-  const [mapMarkers, setMapMarkers] = useState<MapMarker[]>([]);
+  const [mapMarkers, setMapMarkers] = useState<MapMarker[]>(() => {
+    // LocalStorageから初期値を読み込む
+    if (typeof window !== "undefined") {
+      const savedMarkers = localStorage.getItem(MAP_MARKERS_KEY);
+      return savedMarkers ? JSON.parse(savedMarkers) : [];
+    }
+    return [];
+  });
+
+  // mapMarkersが更新されたらLocalStorageに保存
+  useEffect(() => {
+    localStorage.setItem(MAP_MARKERS_KEY, JSON.stringify(mapMarkers));
+  }, [mapMarkers]);
 
   const {
     scheduleItems,
@@ -60,13 +74,19 @@ export const CreatePlanPageContent = () => {
       if (scheduleItems.length > 0) {
         const firstSchedule = scheduleItems[0];
         if (firstSchedule.prefectureCode) {
-          setMapMarkers((prev) => [
-            ...prev,
-            {
-              prefectureCode: firstSchedule.prefectureCode as string,
-              title: planTitle,
-            },
-          ]);
+          const newMarker = {
+            prefectureCode: firstSchedule.prefectureCode as string,
+            title: planTitle,
+          };
+          // 重複チェック
+          const markerExists = mapMarkers.some(
+            (marker) =>
+              marker.prefectureCode === newMarker.prefectureCode &&
+              marker.title === newMarker.title
+          );
+          if (!markerExists) {
+            setMapMarkers((prev) => [...prev, newMarker]);
+          }
         }
       }
       setScheduleItems([]);
