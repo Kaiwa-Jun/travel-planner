@@ -54,7 +54,7 @@ export function Footer() {
   return (
     <footer className="bg-muted mt-auto">
       <div className="container py-8 md:py-12">
-        <div className="grid grid-cols-1 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* ブランド情報 */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-2">
@@ -83,7 +83,7 @@ export function Footer() {
           </div>
 
           {/* リンクセクション */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
+          <div className="col-span-3 grid grid-cols-3 gap-8">
             {Object.entries(footerLinks).map(([title, links]) => (
               <div key={title} className="space-y-3">
                 <h3 className="font-semibold">{title}</h3>
