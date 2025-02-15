@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { prefecturePositions } from "@/data/prefecture-positions";
 import { MapPin } from "lucide-react";
+import { MARKERS_UPDATE_EVENT } from "@/components/saved-plans";
 
 type MapMarker = {
   prefectureCode: string;
@@ -14,11 +15,32 @@ type MapSectionProps = {
   markers?: MapMarker[];
 };
 
-export const MapSection = ({ markers = [] }: MapSectionProps) => {
+export const MapSection = ({
+  markers: initialMarkers = [],
+}: MapSectionProps) => {
+  const [markers, setMarkers] = useState<MapMarker[]>(initialMarkers);
   const [selectedPrefecture, setSelectedPrefecture] = useState<string | null>(
     null
   );
   const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
+
+  // マーカー更新イベントのリスナー
+  useEffect(() => {
+    const handleMarkersUpdate = (event: CustomEvent<MapMarker[]>) => {
+      setMarkers(event.detail);
+    };
+
+    window.addEventListener(
+      MARKERS_UPDATE_EVENT,
+      handleMarkersUpdate as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        MARKERS_UPDATE_EVENT,
+        handleMarkersUpdate as EventListener
+      );
+    };
+  }, []);
 
   // SVG要素の参照を取得
   const svgRef = useCallback((node: SVGSVGElement) => {
@@ -33,6 +55,7 @@ export const MapSection = ({ markers = [] }: MapSectionProps) => {
       if (!svgElement) return null;
 
       // SVGのビューボックスを取得
+      if (!svgElement || !svgElement.viewBox?.baseVal) return null;
       const viewBox = svgElement.viewBox.baseVal;
 
       // SVG要素の実際のサイズを取得

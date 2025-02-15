@@ -6,9 +6,21 @@ import { ja } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Clock, Calendar, Pencil, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { type SavedPlan, type Schedule } from "@/types/schedule";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { MapSection } from "@/app/create/components/MapSection";
 
 // サンプルの保存済みプラン
 const initialSavedPlans: SavedPlan[] = [
@@ -230,6 +242,7 @@ const initialSavedPlans: SavedPlan[] = [
 export const PLAN_ADDED_EVENT = "planAdded";
 export const PLAN_EDIT_EVENT = "planEdit";
 export const PLANS_STORAGE_KEY = "savedPlans";
+export const MARKERS_UPDATE_EVENT = "markersUpdate";
 
 // プラン追加用のカスタムイベントを作成
 export const createPlanAddedEvent = (plan: SavedPlan) => {
@@ -239,6 +252,13 @@ export const createPlanAddedEvent = (plan: SavedPlan) => {
 // プラン編集用のカスタムイベントを作成
 export const createPlanEditEvent = (plan: SavedPlan) => {
   return new CustomEvent(PLAN_EDIT_EVENT, { detail: plan });
+};
+
+// マーカー更新用のカスタムイベントを作成
+export const createMarkersUpdateEvent = (
+  markers: { prefectureCode: string; title: string }[]
+) => {
+  return new CustomEvent(MARKERS_UPDATE_EVENT, { detail: markers });
 };
 
 // アニメーションのバリアント定義
@@ -289,7 +309,13 @@ const buttonVariants = {
 };
 
 // 保存済みプランカードコンポーネント
-function SavedPlanCard({ plan }: { plan: SavedPlan }) {
+function SavedPlanCard({
+  plan,
+  onDelete,
+}: {
+  plan: SavedPlan;
+  onDelete: (id: number) => void;
+}) {
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = format(new Date(startDate), "M/d(E)", { locale: ja });
     const end = format(new Date(endDate), "M/d(E)", { locale: ja });
@@ -299,6 +325,10 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
   const handleEdit = () => {
     const event = createPlanEditEvent(plan);
     window.dispatchEvent(event);
+  };
+
+  const handleDelete = () => {
+    onDelete(plan.id);
   };
 
   return (
@@ -344,17 +374,43 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
                 whileHover="hover"
                 className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
               >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive"
-                  onClick={() => {
-                    // TODO: 削除機能の実装
-                    console.log("Delete plan:", plan.id);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>プランの削除</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        このプランを削除してもよろしいですか？
+                        <div className="mt-2 p-4 bg-muted rounded-lg">
+                          <p className="font-medium">{plan.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDateRange(plan.startDate, plan.endDate)}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {plan.scheduleCount}件のスケジュール
+                          </p>
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        削除
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </motion.div>
             </div>
           </div>
@@ -423,6 +479,17 @@ function SkeletonCard() {
 export const SavedPlans = () => {
   const [plans, setPlans] = useState<SavedPlan[]>([]);
 
+  // マーカー情報の生成と更新イベントの発行
+  useEffect(() => {
+    const newMarkers = plans.map((plan) => ({
+      prefectureCode: plan.schedules[0].prefectureCode,
+      title: plan.title,
+    }));
+    // マーカー情報が変更されたら、イベントを発行
+    const event = createMarkersUpdateEvent(newMarkers);
+    window.dispatchEvent(event);
+  }, [plans]);
+
   // 初期データの読み込み
   useEffect(() => {
     const savedPlans = localStorage.getItem(PLANS_STORAGE_KEY);
@@ -452,10 +519,13 @@ export const SavedPlans = () => {
           updatedPlans = [...prevPlans, newPlan];
         }
         // startDateでソート
-        return updatedPlans.sort(
+        const sortedPlans = updatedPlans.sort(
           (a, b) =>
             new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
         );
+        // LocalStorageに保存
+        localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(sortedPlans));
+        return sortedPlans;
       });
     };
 
@@ -467,6 +537,21 @@ export const SavedPlans = () => {
       );
     };
   }, []);
+
+  const handleDelete = (planId: number) => {
+    setPlans((prevPlans) => {
+      const updatedPlans = prevPlans.filter((plan) => plan.id !== planId);
+      localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(updatedPlans));
+      // プラン削除後にマーカー情報を更新
+      const newMarkers = updatedPlans.map((plan) => ({
+        prefectureCode: plan.schedules[0].prefectureCode,
+        title: plan.title,
+      }));
+      const event = createMarkersUpdateEvent(newMarkers);
+      window.dispatchEvent(event);
+      return updatedPlans;
+    });
+  };
 
   return (
     <motion.div initial="hidden" animate="show" variants={containerVariants}>
@@ -483,7 +568,7 @@ export const SavedPlans = () => {
         variants={containerVariants}
       >
         {plans.map((plan) => (
-          <SavedPlanCard key={plan.id} plan={plan} />
+          <SavedPlanCard key={plan.id} plan={plan} onDelete={handleDelete} />
         ))}
       </motion.div>
     </motion.div>
