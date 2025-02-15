@@ -142,7 +142,10 @@ export const MapSection = ({
     >
       {selectedPrefecture === "2" ||
       selectedPrefecture === "3" ||
-      selectedPrefecture === "5" ? (
+      selectedPrefecture === "4" ||
+      selectedPrefecture === "5" ||
+      selectedPrefecture === "6" ||
+      selectedPrefecture === "7" ? (
         <TohokuMap
           markers={markers}
           onBackToNational={handleBackToNational}
@@ -232,6 +235,48 @@ export const MapSection = ({
                 >
                   <title>秋田 / Akita</title>
                   <polygon points="54 97 47 102 43 101 39 100 37 95 23 92 19 87 9 88 11 78 16 69 17 47 11 39 3 42 0 33 6 36 12 28 15 19 15 11 10 6 14 7 17 3 29 5 32 2 39 7 42 5 45 7 55 0 55 5 60 5 59 16 55 21 57 39 52 40 55 44 52 48 54 53 50 59 47 70 55 83 52 86 55 91" />
+                </g>
+                <g
+                  className="yamagata tohoku prefecture"
+                  data-code="6"
+                  stroke-linejoin="round"
+                  fill="#EEEEEE"
+                  fill-rule="nonzero"
+                  stroke="#000000"
+                  stroke-width="1.0"
+                  transform="translate(612.000000, 439.000000)"
+                  onClick={() => handlePrefectureClick("6")}
+                >
+                  <title>山形 / Yamagata</title>
+                  <polygon points="14 1 24 0 28 5 42 8 44 13 48 14 53 22 51 30 48 30 52 41 45 53 46 59 43 65 36 67 37 72 36 81 38 82 35 86 29 87 26 85 22 86 20 82 14 83 7 81 4 76 7 68 7 60 15 57 17 53 8 47 8 40 0 37 13 14" />
+                </g>
+                <g
+                  className="miyagi tohoku prefecture"
+                  data-code="4"
+                  stroke-linejoin="round"
+                  fill="#EEEEEE"
+                  fill-rule="nonzero"
+                  stroke="#000000"
+                  stroke-width="1.0"
+                  transform="translate(648.000000, 445.000000)"
+                  onClick={() => handlePrefectureClick("4")}
+                >
+                  <title>宮城 / Miyagi</title>
+                  <path d="M33,70 L29,70 L29,76 L25,76 L26,78 L21,76 L20,70 L11,70 L7,66 L1,66 L0,61 L7,59 L10,53 L9,47 L16,35 L12,24 L15,24 L17,16 L12,8 L16,9 L23,4 L33,9 L41,8 L39,12 L45,16 L49,11 L55,14 L57,0 L64,1 L67,8 L62,5 L63,10 L59,14 L62,19 L60,17 L56,20 L60,22 L57,28 L61,28 L61,32 L58,30 L60,34 L57,35 L58,38 L61,37 L59,39 L61,41 L61,45 L57,43 L58,40 L55,41 L57,39 L56,37 L39,40 L36,43 L40,45 L35,46 L38,47 L32,57 L33,70 Z M43,41 L44,43 L42,43 L43,41 Z" />
+                </g>
+                <g
+                  className="fukushima tohoku prefecture"
+                  data-code="7"
+                  stroke-linejoin="round"
+                  fill="#EEEEEE"
+                  fill-rule="nonzero"
+                  stroke="#000000"
+                  stroke-width="1.0"
+                  transform="translate(594.000000, 511.000000)"
+                  onClick={() => handlePrefectureClick("7")}
+                >
+                  <title>福島 / Fukushima</title>
+                  <polygon points="82 69 72 64 72 68 66 74 56 65 55 59 49 55 37 52 12 68 4 66 5 52 0 47 4 41 2 37 3 34 12 33 13 30 21 30 19 21 28 11 25 9 32 11 38 10 40 14 44 13 47 15 53 14 56 10 54 9 55 0 61 0 65 4 74 4 75 10 80 12 79 10 83 10 83 4 87 4 93 18 93 45 91 61" />
                 </g>
                 {/* 他の都道府県のSVGパス */}
               </g>
