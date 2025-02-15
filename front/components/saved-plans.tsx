@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Clock, Calendar, ArrowRight } from "lucide-react";
+import { MapPin, Clock, Calendar, Pencil, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { type SavedPlan, type Schedule } from "@/types/schedule";
@@ -315,14 +315,49 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
           whileHover="hover"
         />
         <CardContent className="p-4">
-          <motion.h3
-            className="font-semibold mb-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {plan.title}
-          </motion.h3>
+          <div className="flex items-center justify-between mb-2">
+            <motion.h3
+              className="font-semibold"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              {plan.title}
+            </motion.h3>
+            <div className="flex gap-1">
+              <motion.div
+                variants={buttonVariants}
+                whileHover="hover"
+                className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleEdit}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </motion.div>
+              <motion.div
+                variants={buttonVariants}
+                whileHover="hover"
+                className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive"
+                  onClick={() => {
+                    // TODO: 削除機能の実装
+                    console.log("Delete plan:", plan.id);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </div>
+          </div>
           <motion.div
             className="space-y-1 text-sm text-muted-foreground"
             initial={{ opacity: 0 }}
@@ -337,21 +372,11 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
               <MapPin className="h-4 w-4 mr-2" />
               <span className="truncate">{plan.location}</span>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2" />
                 {plan.scheduleCount}件のスケジュール
               </div>
-              <motion.div variants={buttonVariants} whileHover="hover">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1"
-                  onClick={handleEdit}
-                >
-                  編集
-                </Button>
-              </motion.div>
             </div>
           </motion.div>
         </CardContent>
