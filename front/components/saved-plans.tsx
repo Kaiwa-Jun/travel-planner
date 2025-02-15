@@ -291,8 +291,8 @@ const buttonVariants = {
 // 保存済みプランカードコンポーネント
 function SavedPlanCard({ plan }: { plan: SavedPlan }) {
   const formatDateRange = (startDate: string, endDate: string) => {
-    const start = format(new Date(startDate), "M月d日(E)", { locale: ja });
-    const end = format(new Date(endDate), "M月d日(E)", { locale: ja });
+    const start = format(new Date(startDate), "M/d(E)", { locale: ja });
+    const end = format(new Date(endDate), "M/d(E)", { locale: ja });
     return `${start} 〜 ${end}`;
   };
 
@@ -335,7 +335,7 @@ function SavedPlanCard({ plan }: { plan: SavedPlan }) {
             </div>
             <div className="flex items-center">
               <MapPin className="h-4 w-4 mr-2" />
-              {plan.location}
+              <span className="truncate">{plan.location}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
