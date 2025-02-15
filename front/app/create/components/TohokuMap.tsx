@@ -141,7 +141,7 @@ export const TohokuMap = ({
                 : selectedPrefecture === "5"
                 ? "matrix(2.1, 0, 0, 2.1, -700, -420)"
                 : selectedPrefecture === "4"
-                ? "matrix(2.5, 0, 0, 2.5, -1000, -700)"
+                ? "matrix(2.5, 0, 0, 2.5, -1000, -670)"
                 : selectedPrefecture === "6"
                 ? "matrix(2.1, 0, 0, 2.1, -700, -450)"
                 : selectedPrefecture === "7"
