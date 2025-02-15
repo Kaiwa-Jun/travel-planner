@@ -121,6 +121,12 @@ export const TohokuMap = ({
               ? "580 300 260 260"
               : selectedPrefecture === "5"
               ? "550 300 260 260"
+              : selectedPrefecture === "4"
+              ? "580 420 220 220"
+              : selectedPrefecture === "6"
+              ? "550 450 260 260"
+              : selectedPrefecture === "7"
+              ? "530 450 220 220"
               : "600 250 200 200"
           }
           preserveAspectRatio="xMidYMid meet"
@@ -134,6 +140,12 @@ export const TohokuMap = ({
                 ? "matrix(2.1, 0, 0, 2.1, -750, -420)"
                 : selectedPrefecture === "5"
                 ? "matrix(2.1, 0, 0, 2.1, -700, -420)"
+                : selectedPrefecture === "4"
+                ? "matrix(2.5, 0, 0, 2.5, -1000, -700)"
+                : selectedPrefecture === "6"
+                ? "matrix(2.1, 0, 0, 2.1, -700, -450)"
+                : selectedPrefecture === "7"
+                ? "matrix(2.5, 0, 0, 2.5, -950, -800)"
                 : "matrix(2.5, 0, 0, 2.5, -900, -450)"
             }
           >
