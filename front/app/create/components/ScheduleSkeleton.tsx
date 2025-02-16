@@ -1,6 +1,8 @@
 "use client";
 
-import { Calendar, Clock, GripVertical, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
 export const ScheduleSkeleton = () => {
   return (
@@ -10,34 +12,29 @@ export const ScheduleSkeleton = () => {
           <Calendar className="h-4 w-4" />
           <div className="h-4 bg-muted rounded animate-pulse w-32" />
         </div>
-        <div className="space-y-3 mt-3">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="flex items-start gap-2 p-3 border rounded-lg"
-            >
-              <div className="flex items-center self-stretch text-muted-foreground">
-                <GripVertical className="h-4 w-4" />
-              </div>
-              <div className="flex items-center px-2 py-4">
-                <div className="flex-shrink-0 w-20 md:w-20 aspect-[4/3]">
-                  <div className="w-full h-full rounded bg-muted animate-pulse" />
-                </div>
-              </div>
-              <div className="flex-grow space-y-2">
-                <div className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
-                  <div className="h-3 bg-muted rounded animate-pulse w-16" />
-                </div>
-                <div className="h-5 bg-muted rounded animate-pulse w-3/4" />
-                <div className="flex items-center">
-                  <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
-                  <div className="h-3 bg-muted rounded animate-pulse w-1/2" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Card className="p-4 mb-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="h-6 bg-muted rounded animate-pulse w-48 mb-2" />
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    <div className="h-4 bg-muted rounded animate-pulse w-32" />
+                  </div>
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <div className="h-4 bg-muted rounded animate-pulse w-40" />
+                  </div>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );
