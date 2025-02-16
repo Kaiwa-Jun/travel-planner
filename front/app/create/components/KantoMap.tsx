@@ -147,7 +147,7 @@ export const KantoMap = ({
                 : selectedPrefecture === "10"
                 ? "matrix(3.0, 0, 0, 3.0, -1150, -1170)"
                 : selectedPrefecture === "11"
-                ? "matrix(2.1, 0, 0, 2.1, -700, -800)"
+                ? "matrix(5.0, 0, 0, 5.0, -2300, -2450)"
                 : selectedPrefecture === "12"
                 ? "matrix(3.2, 0, 0, 3.2, -1300, -1400)"
                 : selectedPrefecture === "13"
