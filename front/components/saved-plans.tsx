@@ -308,6 +308,57 @@ const buttonVariants = {
   },
 };
 
+// 都道府県コードと名称のマッピング
+const prefectureMap: { [key: string]: string } = {
+  "01": "北海道",
+  "02": "青森県",
+  "03": "岩手県",
+  "04": "宮城県",
+  "05": "秋田県",
+  "06": "山形県",
+  "07": "福島県",
+  "08": "茨城県",
+  "09": "栃木県",
+  "10": "群馬県",
+  "11": "埼玉県",
+  "12": "千葉県",
+  "13": "東京都",
+  "14": "神奈川県",
+  "15": "新潟県",
+  "16": "富山県",
+  "17": "石川県",
+  "18": "福井県",
+  "19": "山梨県",
+  "20": "長野県",
+  "21": "岐阜県",
+  "22": "静岡県",
+  "23": "愛知県",
+  "24": "三重県",
+  "25": "滋賀県",
+  "26": "京都府",
+  "27": "大阪府",
+  "28": "兵庫県",
+  "29": "奈良県",
+  "30": "和歌山県",
+  "31": "鳥取県",
+  "32": "島根県",
+  "33": "岡山県",
+  "34": "広島県",
+  "35": "山口県",
+  "36": "徳島県",
+  "37": "香川県",
+  "38": "愛媛県",
+  "39": "高知県",
+  "40": "福岡県",
+  "41": "佐賀県",
+  "42": "長崎県",
+  "43": "熊本県",
+  "44": "大分県",
+  "45": "宮崎県",
+  "46": "鹿児島県",
+  "47": "沖縄県",
+};
+
 // 保存済みプランカードコンポーネント
 function SavedPlanCard({
   plan,
@@ -528,6 +579,7 @@ export const SavedPlans = () => {
   const [activeFilter, setActiveFilter] = useState<
     "all" | "noPhoto" | "completed"
   >("all");
+  const [sortBy, setSortBy] = useState<"date" | "location">("date");
 
   // フィルター用のボタンスタイル
   const getFilterButtonStyle = (isActive: boolean) => {
@@ -538,17 +590,115 @@ export const SavedPlans = () => {
     }`;
   };
 
+  // ソート用のボタンスタイル
+  const getSortButtonStyle = (isActive: boolean) => {
+    return `px-4 py-2 text-sm rounded-full transition-colors ${
+      isActive
+        ? "bg-primary text-primary-foreground"
+        : "text-muted-foreground hover:text-foreground"
+    }`;
+  };
+
+  // 住所から都道府県コードを取得する関数
+  const getPrefectureCodeFromLocation = (location: string): string => {
+    // 都道府県名のリスト（長い順にソート）
+    const prefNames = Object.entries(prefectureMap)
+      .map(([code, name]) => ({ code, name }))
+      .sort((a, b) => b.name.length - a.name.length);
+
+    // 住所から都道府県を検出
+    for (const { code, name } of prefNames) {
+      if (location.includes(name)) {
+        return code;
+      }
+    }
+    return "04"; // 宮城県をデフォルトに
+  };
+
   // フィルター適用後のプラン
-  const filteredPlans = useMemo(() => {
+  const filteredAndSortedPlans = useMemo(() => {
+    let result = [...plans];
+
+    // フィルターの適用
     switch (activeFilter) {
       case "noPhoto":
-        return plans.filter((plan) => !plan.hasAlbum);
+        result = result.filter((plan) => !plan.hasAlbum);
+        break;
       case "completed":
-        return plans.filter((plan) => plan.hasAlbum);
-      default:
-        return plans;
+        result = result.filter((plan) => plan.hasAlbum);
+        break;
     }
-  }, [plans, activeFilter]);
+
+    // ソートの適用
+    switch (sortBy) {
+      case "date":
+        result.sort(
+          (a, b) =>
+            new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        );
+        break;
+      case "location":
+        // 都道府県名でソート
+        result.sort((a, b) => {
+          const prefCodeA = getPrefectureCodeFromLocation(
+            a.schedules[0].location
+          );
+          const prefCodeB = getPrefectureCodeFromLocation(
+            b.schedules[0].location
+          );
+          const prefA = prefectureMap[prefCodeA];
+          const prefB = prefectureMap[prefCodeB];
+          return prefA.localeCompare(prefB, "ja");
+        });
+        break;
+    }
+
+    return result;
+  }, [plans, activeFilter, sortBy]);
+
+  // プランをグループ化
+  const groupedPlans = useMemo(() => {
+    const result = new Map<string, SavedPlan[]>();
+
+    if (sortBy === "date") {
+      // 年月でグループ化（降順）
+      filteredAndSortedPlans.forEach((plan) => {
+        const yearMonth = format(new Date(plan.startDate), "yyyy年MM月", {
+          locale: ja,
+        });
+        if (!result.has(yearMonth)) {
+          result.set(yearMonth, []);
+        }
+        result.get(yearMonth)?.push(plan);
+      });
+
+      // グループを日付の降順でソート
+      return new Map(
+        [...result.entries()].sort((a, b) => {
+          const dateA = new Date(a[1][0].startDate);
+          const dateB = new Date(b[1][0].startDate);
+          return dateB.getTime() - dateA.getTime();
+        })
+      );
+    } else {
+      // 都道府県別でグループ化
+      filteredAndSortedPlans.forEach((plan) => {
+        const prefCode = getPrefectureCodeFromLocation(
+          plan.schedules[0].location
+        );
+        const prefName = prefectureMap[prefCode];
+        if (!result.has(prefName)) {
+          result.set(prefName, []);
+        }
+        result.get(prefName)?.push(plan);
+      });
+
+      // 都道府県名でソート（五十音順）
+      return new Map(
+        [...result.entries()].sort((a, b) => a[0].localeCompare(b[0], "ja"))
+      );
+    }
+  }, [filteredAndSortedPlans, sortBy]);
 
   // マーカー情報の生成と更新イベントの発行
   useEffect(() => {
@@ -635,40 +785,63 @@ export const SavedPlans = () => {
         >
           プラン＆アルバム
         </motion.h2>
-        <div className="flex gap-2 bg-muted/30 p-1 rounded-full w-fit">
-          <button
-            className={getFilterButtonStyle(activeFilter === "all")}
-            onClick={() => setActiveFilter("all")}
-          >
-            すべて
-          </button>
-          <button
-            className={getFilterButtonStyle(activeFilter === "noPhoto")}
-            onClick={() => setActiveFilter("noPhoto")}
-          >
-            プラン
-          </button>
-          <button
-            className={getFilterButtonStyle(activeFilter === "completed")}
-            onClick={() => setActiveFilter("completed")}
-          >
-            アルバム
-          </button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex gap-2 bg-muted/30 p-1 rounded-full w-fit">
+            <button
+              className={getFilterButtonStyle(activeFilter === "all")}
+              onClick={() => setActiveFilter("all")}
+            >
+              すべて
+            </button>
+            <button
+              className={getFilterButtonStyle(activeFilter === "noPhoto")}
+              onClick={() => setActiveFilter("noPhoto")}
+            >
+              プラン
+            </button>
+            <button
+              className={getFilterButtonStyle(activeFilter === "completed")}
+              onClick={() => setActiveFilter("completed")}
+            >
+              アルバム
+            </button>
+          </div>
+          <div className="flex gap-2 bg-muted/30 p-1 rounded-full w-fit">
+            <button
+              className={getSortButtonStyle(sortBy === "date")}
+              onClick={() => setSortBy("date")}
+            >
+              日付
+            </button>
+            <button
+              className={getSortButtonStyle(sortBy === "location")}
+              onClick={() => setSortBy("location")}
+            >
+              場所
+            </button>
+          </div>
         </div>
       </div>
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 max-w-6xl mx-auto"
-        variants={containerVariants}
-      >
-        {filteredPlans.map((plan) => (
-          <SavedPlanCard
-            key={plan.id}
-            plan={plan}
-            onDelete={handleDelete}
-            activeFilter={activeFilter}
-          />
+      <div className="mt-8 space-y-8">
+        {Array.from(groupedPlans.entries()).map(([group, plans]) => (
+          <div key={group} className="space-y-4">
+            <h3 className="text-xl font-semibold">{group}</h3>
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              variants={containerVariants}
+            >
+              {plans.map((plan) => (
+                <SavedPlanCard
+                  key={plan.id}
+                  plan={plan}
+                  onDelete={handleDelete}
+                  activeFilter={activeFilter}
+                />
+              ))}
+            </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
     </motion.div>
   );
 };
