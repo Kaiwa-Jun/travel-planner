@@ -17,6 +17,15 @@ jest.mock("framer-motion", () => ({
   },
 }));
 
+// Next.jsのルーターをモック
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    refresh: jest.fn(),
+  }),
+}));
+
 jest.mock("@/components/navigation", () => ({
   Navigation: () => <div data-testid="navigation" />,
 }));
