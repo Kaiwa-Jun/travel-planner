@@ -364,10 +364,12 @@ function SavedPlanCard({
   plan,
   onDelete,
   activeFilter,
+  onAlbumStateChange,
 }: {
   plan: SavedPlan;
   onDelete: (id: number) => void;
   activeFilter: "all" | "noPhoto" | "completed";
+  onAlbumStateChange: (planId: number, hasAlbum: boolean) => void;
 }) {
   const [hasAlbum, setHasAlbum] = useState(plan.hasAlbum || false);
   const router = useRouter();
@@ -375,6 +377,7 @@ function SavedPlanCard({
   // hasAlbumの変更をplanオブジェクトに反映
   const handleAlbumStateChange = (newState: boolean) => {
     setHasAlbum(newState);
+    onAlbumStateChange(plan.id, newState);
     const savedPlans = JSON.parse(
       localStorage.getItem(PLANS_STORAGE_KEY) || "[]"
     );
@@ -581,6 +584,16 @@ export const SavedPlans = () => {
   >("all");
   const [sortBy, setSortBy] = useState<"date" | "location">("date");
 
+  // アルバム状態変更のハンドラー
+  const handleAlbumStateChange = (planId: number, hasAlbum: boolean) => {
+    setPlans((prevPlans) => {
+      const updatedPlans = prevPlans.map((plan) =>
+        plan.id === planId ? { ...plan, hasAlbum } : plan
+      );
+      return updatedPlans;
+    });
+  };
+
   // フィルター用のボタンスタイル
   const getFilterButtonStyle = (isActive: boolean) => {
     return `px-4 py-2 text-sm rounded-full transition-colors ${
@@ -674,7 +687,7 @@ export const SavedPlans = () => {
 
       // グループを日付の降順でソート
       return new Map(
-        [...result.entries()].sort((a, b) => {
+        Array.from(result.entries()).sort((a, b) => {
           const dateA = new Date(a[1][0].startDate);
           const dateB = new Date(b[1][0].startDate);
           return dateB.getTime() - dateA.getTime();
@@ -695,7 +708,9 @@ export const SavedPlans = () => {
 
       // 都道府県名でソート（五十音順）
       return new Map(
-        [...result.entries()].sort((a, b) => a[0].localeCompare(b[0], "ja"))
+        Array.from(result.entries()).sort((a, b) =>
+          a[0].localeCompare(b[0], "ja")
+        )
       );
     }
   }, [filteredAndSortedPlans, sortBy]);
@@ -836,6 +851,7 @@ export const SavedPlans = () => {
                   plan={plan}
                   onDelete={handleDelete}
                   activeFilter={activeFilter}
+                  onAlbumStateChange={handleAlbumStateChange}
                 />
               ))}
             </motion.div>
