@@ -28,4 +28,5 @@ export interface SavedPlan {
   image: string;
   scheduleCount: number;
   schedules: Schedule[];
+  hasAlbum?: boolean;
 }

@@ -312,10 +312,27 @@ const buttonVariants = {
 function SavedPlanCard({
   plan,
   onDelete,
+  activeFilter,
 }: {
   plan: SavedPlan;
   onDelete: (id: number) => void;
+  activeFilter: "all" | "noPhoto" | "completed";
 }) {
+  const [hasAlbum, setHasAlbum] = useState(plan.hasAlbum || false);
+  const router = useRouter();
+
+  // hasAlbumの変更をplanオブジェクトに反映
+  const handleAlbumStateChange = (newState: boolean) => {
+    setHasAlbum(newState);
+    const savedPlans = JSON.parse(
+      localStorage.getItem(PLANS_STORAGE_KEY) || "[]"
+    );
+    const updatedPlans = savedPlans.map((p: SavedPlan) =>
+      p.id === plan.id ? { ...p, hasAlbum: newState } : p
+    );
+    localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(updatedPlans));
+  };
+
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = format(new Date(startDate), "M/d(E)", { locale: ja });
     const end = format(new Date(endDate), "M/d(E)", { locale: ja });
@@ -435,6 +452,36 @@ function SavedPlanCard({
               </div>
             </div>
           </motion.div>
+          <div className="mt-4 pt-4 border-t">
+            <Button
+              variant={hasAlbum ? "default" : "secondary"}
+              size="sm"
+              className={`w-full ${
+                hasAlbum
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-rose-600 hover:bg-rose-700 text-white"
+              }`}
+              onClick={() => {
+                if (hasAlbum) {
+                  router.push(`/albums/${plan.id}`);
+                } else {
+                  handleAlbumStateChange(true);
+                  // TODO: 写真追加の処理を実装
+                  console.log("写真を追加", plan.id);
+                }
+              }}
+            >
+              {(() => {
+                if (activeFilter === "all") {
+                  return hasAlbum ? "アルバムを見る" : "写真を追加";
+                } else if (activeFilter === "noPhoto") {
+                  return "写真を追加";
+                } else {
+                  return "アルバムを見る";
+                }
+              })()}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
@@ -478,6 +525,30 @@ function SkeletonCard() {
 
 export const SavedPlans = () => {
   const [plans, setPlans] = useState<SavedPlan[]>([]);
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "noPhoto" | "completed"
+  >("all");
+
+  // フィルター用のボタンスタイル
+  const getFilterButtonStyle = (isActive: boolean) => {
+    return `px-4 py-2 text-sm rounded-full transition-colors ${
+      isActive
+        ? "bg-primary text-primary-foreground"
+        : "text-muted-foreground hover:text-foreground"
+    }`;
+  };
+
+  // フィルター適用後のプラン
+  const filteredPlans = useMemo(() => {
+    switch (activeFilter) {
+      case "noPhoto":
+        return plans.filter((plan) => !plan.hasAlbum);
+      case "completed":
+        return plans.filter((plan) => plan.hasAlbum);
+      default:
+        return plans;
+    }
+  }, [plans, activeFilter]);
 
   // マーカー情報の生成と更新イベントの発行
   useEffect(() => {
@@ -555,20 +626,47 @@ export const SavedPlans = () => {
 
   return (
     <motion.div initial="hidden" animate="show" variants={containerVariants}>
-      <motion.h2
-        className="text-2xl font-semibold mb-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        保存したプラン
-      </motion.h2>
+      <div className="flex flex-col space-y-4">
+        <motion.h2
+          className="text-2xl font-semibold"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          プラン＆アルバム
+        </motion.h2>
+        <div className="flex gap-2 bg-muted/30 p-1 rounded-full w-fit">
+          <button
+            className={getFilterButtonStyle(activeFilter === "all")}
+            onClick={() => setActiveFilter("all")}
+          >
+            すべて
+          </button>
+          <button
+            className={getFilterButtonStyle(activeFilter === "noPhoto")}
+            onClick={() => setActiveFilter("noPhoto")}
+          >
+            プラン
+          </button>
+          <button
+            className={getFilterButtonStyle(activeFilter === "completed")}
+            onClick={() => setActiveFilter("completed")}
+          >
+            アルバム
+          </button>
+        </div>
+      </div>
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8 max-w-6xl mx-auto"
         variants={containerVariants}
       >
-        {plans.map((plan) => (
-          <SavedPlanCard key={plan.id} plan={plan} onDelete={handleDelete} />
+        {filteredPlans.map((plan) => (
+          <SavedPlanCard
+            key={plan.id}
+            plan={plan}
+            onDelete={handleDelete}
+            activeFilter={activeFilter}
+          />
         ))}
       </motion.div>
     </motion.div>

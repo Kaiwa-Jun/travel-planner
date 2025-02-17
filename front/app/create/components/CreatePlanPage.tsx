@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { MapSection } from "./MapSection";
 import { AddScheduleForm } from "./AddScheduleForm";
 import { ScheduleList } from "./ScheduleList";
 import { useCreatePlanForm } from "../hooks/useCreatePlanForm";
@@ -16,28 +15,8 @@ import { usePlanSaving } from "../hooks/usePlanSaving";
 import { useEffect, useState } from "react";
 import type { SavedPlan } from "@/types/schedule";
 
-const MAP_MARKERS_KEY = "map-markers";
-
-type MapMarker = {
-  prefectureCode: string;
-  title: string;
-};
-
 export const CreatePlanPageContent = () => {
   const [editingPlan, setEditingPlan] = useState<SavedPlan | null>(null);
-  const [mapMarkers, setMapMarkers] = useState<MapMarker[]>(() => {
-    // LocalStorageから初期値を読み込む
-    if (typeof window !== "undefined") {
-      const savedMarkers = localStorage.getItem(MAP_MARKERS_KEY);
-      return savedMarkers ? JSON.parse(savedMarkers) : [];
-    }
-    return [];
-  });
-
-  // mapMarkersが更新されたらLocalStorageに保存
-  useEffect(() => {
-    localStorage.setItem(MAP_MARKERS_KEY, JSON.stringify(mapMarkers));
-  }, [mapMarkers]);
 
   const {
     scheduleItems,
@@ -70,25 +49,6 @@ export const CreatePlanPageContent = () => {
   // プラン保存時のマーカー追加処理
   const onSavePlan = () => {
     if (handleSavePlan(scheduleItems, editingPlan?.id)) {
-      // 最初のスケジュールの都道府県を取得
-      if (scheduleItems.length > 0) {
-        const firstSchedule = scheduleItems[0];
-        if (firstSchedule.prefectureCode) {
-          const newMarker = {
-            prefectureCode: firstSchedule.prefectureCode as string,
-            title: planTitle,
-          };
-          // 重複チェック
-          const markerExists = mapMarkers.some(
-            (marker) =>
-              marker.prefectureCode === newMarker.prefectureCode &&
-              marker.title === newMarker.title
-          );
-          if (!markerExists) {
-            setMapMarkers((prev) => [...prev, newMarker]);
-          }
-        }
-      }
       setScheduleItems([]);
       setEditingPlan(null);
     }
@@ -143,7 +103,6 @@ export const CreatePlanPageContent = () => {
 
             <div className="flex flex-col md:grid md:grid-cols-[1fr,400px] gap-4 md:gap-8">
               <div className="space-y-8">
-                <MapSection markers={mapMarkers} />
                 <div className="md:block hidden">
                   <SavedPlans />
                 </div>
@@ -201,10 +160,6 @@ export const CreatePlanPageContent = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              <div className="order-3 md:hidden">
-                <SavedPlans />
-              </div>
             </div>
           </motion.div>
         </main>
