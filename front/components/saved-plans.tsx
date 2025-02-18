@@ -647,11 +647,11 @@ export const SavedPlans = () => {
       case "date":
         result.sort(
           (a, b) =>
-            new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+            new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
         );
         break;
       case "location":
-        // 都道府県名でソート
+        // 都道府県コードでソート（北から南の順）
         result.sort((a, b) => {
           const prefCodeA = getPrefectureCodeFromLocation(
             a.schedules[0].location
@@ -659,9 +659,8 @@ export const SavedPlans = () => {
           const prefCodeB = getPrefectureCodeFromLocation(
             b.schedules[0].location
           );
-          const prefA = prefectureMap[prefCodeA];
-          const prefB = prefectureMap[prefCodeB];
-          return prefA.localeCompare(prefB, "ja");
+          // 数値として比較することで北から南の順にソート
+          return parseInt(prefCodeA) - parseInt(prefCodeB);
         });
         break;
     }
@@ -690,7 +689,7 @@ export const SavedPlans = () => {
         Array.from(result.entries()).sort((a, b) => {
           const dateA = new Date(a[1][0].startDate);
           const dateB = new Date(b[1][0].startDate);
-          return dateB.getTime() - dateA.getTime();
+          return dateA.getTime() - dateB.getTime();
         })
       );
     } else {
@@ -706,11 +705,21 @@ export const SavedPlans = () => {
         result.get(prefName)?.push(plan);
       });
 
-      // 都道府県名でソート（五十音順）
+      // 都道府県名でソート（北から南の順）
       return new Map(
-        Array.from(result.entries()).sort((a, b) =>
-          a[0].localeCompare(b[0], "ja")
-        )
+        Array.from(result.entries()).sort((a, b) => {
+          // 都道府県コードを取得
+          const codeA =
+            Object.entries(prefectureMap).find(
+              ([_, name]) => name === a[0]
+            )?.[0] || "00";
+          const codeB =
+            Object.entries(prefectureMap).find(
+              ([_, name]) => name === b[0]
+            )?.[0] || "00";
+          // 数値として比較
+          return parseInt(codeA) - parseInt(codeB);
+        })
       );
     }
   }, [filteredAndSortedPlans, sortBy]);
