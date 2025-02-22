@@ -100,7 +100,10 @@ export default function AlbumPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* スケジュール一覧 */}
-          <div className="space-y-6">
+          <div className="relative space-y-6 pl-4">
+            {/* タイムライン用の縦線 */}
+            <div className="absolute left-[27px] top-[40px] bottom-8 w-0.5 bg-muted z-0" />
+
             {plan.schedules.map((schedule, index) => (
               <motion.div
                 key={schedule.id}
@@ -108,32 +111,64 @@ export default function AlbumPage({ params }: { params: { id: string } }) {
                 initial="hidden"
                 animate="visible"
                 transition={{ delay: index * 0.1 }}
+                className="relative"
               >
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0 w-24 text-sm text-muted-foreground">
-                        {format(new Date(schedule.date), "M/d")}
-                        <br />
-                        {schedule.startTime}〜{schedule.endTime}
-                      </div>
-                      <div className="flex-grow">
-                        <h3 className="text-lg font-semibold mb-2">
-                          {schedule.title}
-                        </h3>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {schedule.location}
-                        </div>
-                        {schedule.memo && (
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            {schedule.memo}
-                          </p>
-                        )}
-                      </div>
+                {/* 日付が変わる場合のみ日付ヘッダーを表示 */}
+                {(index === 0 ||
+                  schedule.date !== plan.schedules[index - 1].date) && (
+                  <div className="absolute -left-8 flex items-center gap-1 mb-4 z-10 bg-background">
+                    <div className="flex items-center">
+                      <span className="text-xl font-bold text-primary">
+                        {format(new Date(schedule.date), "M/d", { locale: ja })}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-1">
+                        {format(new Date(schedule.date), "E", { locale: ja })}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                )}
+
+                {/* スケジュールカード */}
+                <div
+                  className={`relative ${
+                    index === 0 ||
+                    schedule.date !== plan.schedules[index - 1].date
+                      ? "mt-12 first:mt-16"
+                      : "mt-6"
+                  }`}
+                >
+                  {/* タイムラインのポイント - 日付が変わる場合のみ表示 */}
+                  {(index === 0 ||
+                    schedule.date !== plan.schedules[index - 1].date) && (
+                    <div className="absolute -left-[18px] top-6 w-3 h-3 rounded-full bg-primary ring-4 ring-background z-10" />
+                  )}
+
+                  <Card className="ml-6 relative z-[5]">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-20 text-sm font-medium text-primary">
+                          {schedule.startTime}
+                          <br />
+                          {schedule.endTime}
+                        </div>
+                        <div className="flex-grow">
+                          <h3 className="text-lg font-semibold mb-2">
+                            {schedule.title}
+                          </h3>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {schedule.location}
+                          </div>
+                          {schedule.memo && (
+                            <p className="mt-2 text-sm text-muted-foreground">
+                              {schedule.memo}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </motion.div>
             ))}
           </div>
