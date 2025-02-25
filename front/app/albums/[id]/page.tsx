@@ -165,6 +165,13 @@ export default function AlbumPage({ params }: { params: { id: string } }) {
                             </p>
                           )}
                         </div>
+                        <div className="flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden bg-muted">
+                          <img
+                            src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=400&fit=crop"
+                            alt={schedule.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
