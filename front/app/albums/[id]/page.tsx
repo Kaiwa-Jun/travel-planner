@@ -165,12 +165,29 @@ export default function AlbumPage({ params }: { params: { id: string } }) {
                             </p>
                           )}
                         </div>
-                        <div className="flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden bg-muted">
-                          <img
-                            src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=400&fit=crop"
-                            alt={schedule.title}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="flex-shrink-0 w-32 h-32 relative">
+                          {/* 3枚の重なった画像を表示 */}
+                          <div className="absolute right-4 bottom-4 w-24 h-24 rounded-lg overflow-hidden bg-muted shadow-lg transform rotate-[-8deg] z-10">
+                            <img
+                              src="https://images.unsplash.com/photo-1480796927426-f609979314bd?w=400&h=400&fit=crop"
+                              alt={`${schedule.title} - 3`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="absolute right-2 bottom-2 w-24 h-24 rounded-lg overflow-hidden bg-muted shadow-lg transform rotate-[-4deg] z-20">
+                            <img
+                              src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&h=400&fit=crop"
+                              alt={`${schedule.title} - 2`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="absolute right-0 bottom-0 w-24 h-24 rounded-lg overflow-hidden bg-muted shadow-lg z-30">
+                            <img
+                              src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=400&fit=crop"
+                              alt={`${schedule.title} - 1`}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                            />
+                          </div>
                         </div>
                       </div>
                     </CardContent>
