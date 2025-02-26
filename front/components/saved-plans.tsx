@@ -846,26 +846,28 @@ export const SavedPlans = () => {
           </div>
         </div>
       </div>
-      <div className="mt-8 space-y-8">
-        {Array.from(groupedPlans.entries()).map(([group, plans]) => (
-          <div key={group} className="space-y-4">
-            <h3 className="text-xl font-semibold">{group}</h3>
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-              variants={containerVariants}
-            >
-              {plans.map((plan) => (
-                <SavedPlanCard
-                  key={plan.id}
-                  plan={plan}
-                  onDelete={handleDelete}
-                  activeFilter={activeFilter}
-                  onAlbumStateChange={handleAlbumStateChange}
-                />
-              ))}
-            </motion.div>
-          </div>
-        ))}
+      <div className="mt-8">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          variants={containerVariants}
+        >
+          {Array.from(groupedPlans.entries()).map(([group, plans]) => (
+            <div key={group} className="col-span-full space-y-4">
+              <h3 className="text-xl font-semibold">{group}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {plans.map((plan) => (
+                  <SavedPlanCard
+                    key={plan.id}
+                    plan={plan}
+                    onDelete={handleDelete}
+                    activeFilter={activeFilter}
+                    onAlbumStateChange={handleAlbumStateChange}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </motion.div>
       </div>
     </motion.div>
   );
