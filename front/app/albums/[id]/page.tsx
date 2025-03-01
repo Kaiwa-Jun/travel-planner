@@ -39,6 +39,7 @@ const scheduleVariants = {
 export default function AlbumPage({ params }: { params: { id: string } }) {
   const [plan, setPlan] = useState<SavedPlan | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [headerImage, setHeaderImage] = useState<string>("");
 
   useEffect(() => {
     const savedPlans = localStorage.getItem(PLANS_STORAGE_KEY);
@@ -47,6 +48,7 @@ export default function AlbumPage({ params }: { params: { id: string } }) {
       const targetPlan = plans.find((p) => p.id === parseInt(params.id));
       if (targetPlan) {
         setPlan(targetPlan);
+        setHeaderImage(targetPlan.image);
       }
     }
 
@@ -55,6 +57,9 @@ export default function AlbumPage({ params }: { params: { id: string } }) {
       const allPhotos = JSON.parse(savedPhotos);
       const planPhotos = allPhotos[params.id] || [];
       setPhotos(planPhotos);
+      if (planPhotos.length > 0) {
+        setHeaderImage(planPhotos[0].url);
+      }
     }
   }, [params.id]);
 
@@ -91,7 +96,7 @@ export default function AlbumPage({ params }: { params: { id: string } }) {
           <div className="relative h-[300px] rounded-xl overflow-hidden mb-8">
             <div
               className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${plan.image})` }}
+              style={{ backgroundImage: `url(${headerImage})` }}
             />
             <div className="absolute inset-0 bg-black/50 flex items-end">
               <div className="p-8 text-white">
