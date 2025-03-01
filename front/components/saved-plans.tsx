@@ -566,44 +566,12 @@ function PhotoUploadModal({
 function SavedPlanCard({
   plan,
   onDelete,
-  activeFilter,
-  onAlbumStateChange,
 }: {
   plan: SavedPlan;
   onDelete: (id: number) => void;
-  activeFilter: "all" | "noPhoto" | "completed";
-  onAlbumStateChange: (planId: number, hasAlbum: boolean) => void;
 }) {
-  const [hasAlbum, setHasAlbum] = useState(plan.hasAlbum || false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [thumbnailUrl, setThumbnailUrl] = useState<string>(plan.image);
   const router = useRouter();
-
-  // サムネイル画像の読み込み
-  useEffect(() => {
-    const loadThumbnail = () => {
-      const savedPhotos = localStorage.getItem(PHOTOS_STORAGE_KEY);
-      if (savedPhotos) {
-        const photos = JSON.parse(savedPhotos);
-        if (photos[plan.id]?.length > 0) {
-          setThumbnailUrl(photos[plan.id][0].url);
-        }
-      }
-    };
-    loadThumbnail();
-  }, [plan.id]);
-
-  const handleAlbumStateChange = (newState: boolean) => {
-    setHasAlbum(newState);
-    onAlbumStateChange(plan.id, newState);
-    const savedPlans = JSON.parse(
-      localStorage.getItem(PLANS_STORAGE_KEY) || "[]"
-    );
-    const updatedPlans = savedPlans.map((p: SavedPlan) =>
-      p.id === plan.id ? { ...p, hasAlbum: newState } : p
-    );
-    localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(updatedPlans));
-  };
 
   const handlePhotoUpload = async (photos: Photo[]) => {
     // 既存の写真データを取得
@@ -617,13 +585,6 @@ function SavedPlanCard({
     // 写真データを保存
     localStorage.setItem(PHOTOS_STORAGE_KEY, JSON.stringify(existingPhotos));
 
-    // サムネイルを更新
-    if (photos.length > 0) {
-      setThumbnailUrl(photos[0].url);
-    }
-
-    // アルバム状態を更新
-    handleAlbumStateChange(true);
     setIsUploadModalOpen(false);
     router.push(`/albums/${plan.id}`);
   };
@@ -652,7 +613,7 @@ function SavedPlanCard({
       <Card className="overflow-hidden group">
         <motion.div
           className="aspect-[16/9] bg-cover bg-center"
-          style={{ backgroundImage: `url(${thumbnailUrl})` }}
+          style={{ backgroundImage: `url(${plan.image})` }}
           variants={imageVariants}
           whileHover="hover"
         />
@@ -749,30 +710,12 @@ function SavedPlanCard({
           </motion.div>
           <div className="mt-4 pt-4 border-t">
             <Button
-              variant={hasAlbum ? "default" : "secondary"}
+              variant="secondary"
               size="sm"
-              className={`w-full ${
-                hasAlbum
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-rose-600 hover:bg-rose-700 text-white"
-              }`}
-              onClick={() => {
-                if (hasAlbum) {
-                  router.push(`/albums/${plan.id}`);
-                } else {
-                  setIsUploadModalOpen(true);
-                }
-              }}
+              className="w-full bg-rose-600 hover:bg-rose-700 text-white"
+              onClick={() => setIsUploadModalOpen(true)}
             >
-              {(() => {
-                if (activeFilter === "all") {
-                  return hasAlbum ? "アルバムを見る" : "写真を追加";
-                } else if (activeFilter === "noPhoto") {
-                  return "写真を追加";
-                } else {
-                  return "アルバムを見る";
-                }
-              })()}
+              写真を追加
             </Button>
           </div>
         </CardContent>
@@ -824,20 +767,7 @@ function SkeletonCard() {
 
 export const SavedPlans = () => {
   const [plans, setPlans] = useState<SavedPlan[]>([]);
-  const [activeFilter, setActiveFilter] = useState<
-    "all" | "noPhoto" | "completed"
-  >("all");
   const [sortBy, setSortBy] = useState<"date" | "location">("date");
-
-  // アルバム状態変更のハンドラー
-  const handleAlbumStateChange = (planId: number, hasAlbum: boolean) => {
-    setPlans((prevPlans) => {
-      const updatedPlans = prevPlans.map((plan) =>
-        plan.id === planId ? { ...plan, hasAlbum } : plan
-      );
-      return updatedPlans;
-    });
-  };
 
   // フィルター用のボタンスタイル
   const getFilterButtonStyle = (isActive: boolean) => {
@@ -873,19 +803,19 @@ export const SavedPlans = () => {
     return "04"; // 宮城県をデフォルトに
   };
 
-  // フィルター適用後のプラン
+  // フィルター適用後のプラン（写真未アップロードのみ）
   const filteredAndSortedPlans = useMemo(() => {
     let result = [...plans];
 
-    // フィルターの適用
-    switch (activeFilter) {
-      case "noPhoto":
-        result = result.filter((plan) => !plan.hasAlbum);
-        break;
-      case "completed":
-        result = result.filter((plan) => plan.hasAlbum);
-        break;
-    }
+    // 写真がアップロードされていないプランのみをフィルタリング
+    result = result.filter((plan) => {
+      const savedPhotos = localStorage.getItem(PHOTOS_STORAGE_KEY);
+      if (savedPhotos) {
+        const photos = JSON.parse(savedPhotos);
+        return !photos[plan.id] || photos[plan.id].length === 0;
+      }
+      return true;
+    });
 
     // ソートの適用
     switch (sortBy) {
@@ -911,7 +841,7 @@ export const SavedPlans = () => {
     }
 
     return result;
-  }, [plans, activeFilter, sortBy]);
+  }, [plans, sortBy]);
 
   // プランをグループ化
   const groupedPlans = useMemo(() => {
@@ -1052,29 +982,9 @@ export const SavedPlans = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          プラン＆アルバム
+          プラン一覧
         </motion.h2>
         <div className="flex flex-col gap-2">
-          <div className="flex gap-2 bg-muted/30 p-1 rounded-full w-fit">
-            <button
-              className={getFilterButtonStyle(activeFilter === "all")}
-              onClick={() => setActiveFilter("all")}
-            >
-              すべて
-            </button>
-            <button
-              className={getFilterButtonStyle(activeFilter === "noPhoto")}
-              onClick={() => setActiveFilter("noPhoto")}
-            >
-              プラン
-            </button>
-            <button
-              className={getFilterButtonStyle(activeFilter === "completed")}
-              onClick={() => setActiveFilter("completed")}
-            >
-              アルバム
-            </button>
-          </div>
           <div className="flex gap-2 bg-muted/30 p-1 rounded-full w-fit">
             <button
               className={getSortButtonStyle(sortBy === "date")}
@@ -1105,8 +1015,6 @@ export const SavedPlans = () => {
                     key={plan.id}
                     plan={plan}
                     onDelete={handleDelete}
-                    activeFilter={activeFilter}
-                    onAlbumStateChange={handleAlbumStateChange}
                   />
                 ))}
               </div>

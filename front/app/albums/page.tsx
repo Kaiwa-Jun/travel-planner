@@ -7,134 +7,118 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Calendar, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useEffect, useState, useMemo } from "react";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
+import { type SavedPlan } from "@/types/schedule";
+import { useRouter } from "next/navigation";
 
-// Album型の例。実際にアルバムに必要なプロパティを定義してください。
-type Album = {
-  id: number;
-  title: string;
-  date: string;
-  location: string;
-  image: string;
-};
-
-const albums = [
-  {
-    id: 1,
-    title: "東京スカイツリーと浅草散策",
-    date: "2024/03/15",
-    location: "東京",
-    image:
-      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: 2,
-    title: "大阪城と道頓堀グルメ",
-    date: "2024/04/02",
-    location: "大阪",
-    image:
-      "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: 3,
-    title: "名古屋城と科学館巡り",
-    date: "2024/05/20",
-    location: "名古屋",
-    image:
-      "https://images.unsplash.com/photo-1615432954382-0608f2d8698c?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: 4,
-    title: "仙台七夕まつり",
-    date: "2024/06/10",
-    location: "仙台",
-    image:
-      "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: 5,
-    title: "上野動物園と博物館",
-    date: "2024/03/28",
-    location: "東京",
-    image:
-      "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&auto=format&fit=crop&q=80",
-  },
-  {
-    id: 6,
-    title: "通天閣と新世界探索",
-    date: "2024/05/05",
-    location: "大阪",
-    image:
-      "https://images.unsplash.com/photo-1589452271712-64b8a66c7b71?w=800&auto=format&fit=crop&q=80",
-  },
-];
-
-const sharedPlans = [
-  {
-    id: 4,
-    title: "北海道グルメ旅",
-    startDate: "2024-08-10",
-    endDate: "2024-08-15",
-    image:
-      "https://images.unsplash.com/photo-1583072469274-a9f9638b1b43?w=800&auto=format&fit=crop&q=80",
-    sharedBy: "田中さん",
-  },
-  {
-    id: 5,
-    title: "沖縄ビーチ巡り",
-    startDate: "2024-09-20",
-    endDate: "2024-09-25",
-    image:
-      "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=800&auto=format&fit=crop&q=80",
-    sharedBy: "鈴木さん",
-  },
-];
+const PLANS_STORAGE_KEY = "savedPlans";
+const PHOTOS_STORAGE_KEY = "planPhotos";
 
 export default function AlbumsPage() {
+  const [plans, setPlans] = useState<SavedPlan[]>([]);
+  const router = useRouter();
+
+  // 初期データの読み込み
+  useEffect(() => {
+    const savedPlans = localStorage.getItem(PLANS_STORAGE_KEY);
+    if (savedPlans) {
+      const parsedPlans = JSON.parse(savedPlans);
+      setPlans(parsedPlans);
+    }
+  }, []);
+
+  // 写真付きのプランのみをフィルタリング
+  const albumPlans = useMemo(() => {
+    return plans.filter((plan) => {
+      const savedPhotos = localStorage.getItem(PHOTOS_STORAGE_KEY);
+      if (savedPhotos) {
+        const photos = JSON.parse(savedPhotos);
+        return photos[plan.id]?.length > 0;
+      }
+      return false;
+    });
+  }, [plans]);
+
   // 日付でグループ化
-  const albumsByDate = albums.reduce(
-    (acc: Record<string, Album[]>, album: Album) => {
-      const month = album.date.substring(0, 7); // YYYY/MM
+  const albumsByDate = useMemo(() => {
+    return albumPlans.reduce((acc, plan) => {
+      const month = format(new Date(plan.startDate), "yyyy年MM月", {
+        locale: ja,
+      });
       if (!acc[month]) {
         acc[month] = [];
       }
-      acc[month].push(album);
+      acc[month].push(plan);
       return acc;
-    },
-    {} as Record<string, Album[]>
-  );
+    }, {} as Record<string, SavedPlan[]>);
+  }, [albumPlans]);
 
   // 場所でグループ化
-  const albumsByLocation = albums.reduce((acc, album) => {
-    if (!acc[album.location]) {
-      acc[album.location] = [];
-    }
-    acc[album.location].push(album);
-    return acc;
-  }, {} as Record<string, Album[]>);
+  const albumsByLocation = useMemo(() => {
+    return albumPlans.reduce((acc, plan) => {
+      if (!acc[plan.location]) {
+        acc[plan.location] = [];
+      }
+      acc[plan.location].push(plan);
+      return acc;
+    }, {} as Record<string, SavedPlan[]>);
+  }, [albumPlans]);
 
-  const AlbumCard = ({ album }: { album: Album }) => (
-    <motion.div whileHover={{ scale: 1.02 }} className="group">
-      <Card>
-        <CardContent className="p-4">
-          <div
-            className="aspect-video bg-cover bg-center rounded-md mb-4"
-            style={{ backgroundImage: `url(${album.image})` }}
-          />
-          <h3 className="font-semibold">{album.title}</h3>
-          <div className="flex items-center justify-between mt-2 text-sm text-muted-foreground">
-            <span className="flex items-center">
-              <Calendar className="h-4 w-4 mr-1" />
-              {album.date}
-            </span>
-            <span className="flex items-center">
-              <MapPin className="h-4 w-4 mr-1" />
-              {album.location}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
+  const AlbumCard = ({ plan }: { plan: SavedPlan }) => {
+    const [thumbnailUrl, setThumbnailUrl] = useState<string>(plan.image);
+
+    // サムネイル画像の読み込み
+    useEffect(() => {
+      const loadThumbnail = () => {
+        const savedPhotos = localStorage.getItem(PHOTOS_STORAGE_KEY);
+        if (savedPhotos) {
+          const photos = JSON.parse(savedPhotos);
+          if (photos[plan.id]?.length > 0) {
+            setThumbnailUrl(photos[plan.id][0].url);
+          }
+        }
+      };
+      loadThumbnail();
+    }, [plan.id]);
+
+    const formatDateRange = (startDate: string, endDate: string) => {
+      const start = format(new Date(startDate), "M/d(E)", { locale: ja });
+      const end = format(new Date(endDate), "M/d(E)", { locale: ja });
+      return `${start} 〜 ${end}`;
+    };
+
+    return (
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        className="group cursor-pointer"
+        onClick={() => router.push(`/albums/${plan.id}`)}
+      >
+        <Card className="overflow-hidden">
+          <CardContent className="p-4">
+            <div
+              className="aspect-video bg-cover bg-center rounded-md mb-4 group-hover:opacity-90 transition-opacity"
+              style={{ backgroundImage: `url(${thumbnailUrl})` }}
+            />
+            <h3 className="font-semibold group-hover:text-primary transition-colors">
+              {plan.title}
+            </h3>
+            <div className="flex items-center justify-between mt-2 text-sm text-muted-foreground">
+              <span className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                {formatDateRange(plan.startDate, plan.endDate)}
+              </span>
+              <span className="flex items-center">
+                <MapPin className="h-4 w-4 mr-1" />
+                {plan.location}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  };
 
   return (
     <div className="min-h-screen">
@@ -152,7 +136,7 @@ export default function AlbumsPage() {
             <Link href="/create">
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                新規アルバム
+                新規プラン作成
               </Button>
             </Link>
           </div>
@@ -166,23 +150,21 @@ export default function AlbumsPage() {
 
             <TabsContent value="all" className="space-y-6">
               <div className="grid md:grid-cols-3 gap-6">
-                {albums.map((album) => (
-                  <AlbumCard key={album.id} album={album} />
+                {albumPlans.map((plan) => (
+                  <AlbumCard key={plan.id} plan={plan} />
                 ))}
               </div>
             </TabsContent>
 
             <TabsContent value="date" className="space-y-8">
               {Object.entries(albumsByDate)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([month, monthAlbums]) => (
+                .sort(([a], [b]) => b.localeCompare(a))
+                .map(([month, monthPlans]) => (
                   <div key={month} className="space-y-4">
-                    <h2 className="text-xl font-semibold">
-                      {month.replace("/", "年")}月
-                    </h2>
+                    <h2 className="text-xl font-semibold">{month}</h2>
                     <div className="grid md:grid-cols-3 gap-6">
-                      {monthAlbums.map((album) => (
-                        <AlbumCard key={album.id} album={album} />
+                      {monthPlans.map((plan) => (
+                        <AlbumCard key={plan.id} plan={plan} />
                       ))}
                     </div>
                   </div>
@@ -190,18 +172,18 @@ export default function AlbumsPage() {
             </TabsContent>
 
             <TabsContent value="location" className="space-y-8">
-              {Object.entries(albumsByLocation).map(
-                ([location, locationAlbums]) => (
+              {Object.entries(albumsByLocation)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([location, locationPlans]) => (
                   <div key={location} className="space-y-4">
                     <h2 className="text-xl font-semibold">{location}</h2>
                     <div className="grid md:grid-cols-3 gap-6">
-                      {locationAlbums.map((album) => (
-                        <AlbumCard key={album.id} album={album} />
+                      {locationPlans.map((plan) => (
+                        <AlbumCard key={plan.id} plan={plan} />
                       ))}
                     </div>
                   </div>
-                )
-              )}
+                ))}
             </TabsContent>
           </Tabs>
         </motion.div>
