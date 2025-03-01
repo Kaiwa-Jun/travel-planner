@@ -463,9 +463,11 @@ function PhotoUploadModal({
   useEffect(() => {
     return () => {
       // クリーンアップ時にプレビューURLを解放
-      previews.forEach(URL.revokeObjectURL);
+      previews.forEach((previewUrl) => {
+        URL.revokeObjectURL(previewUrl);
+      });
     };
-  }, []);
+  }, [previews]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
