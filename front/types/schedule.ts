@@ -8,6 +8,14 @@ export interface ScheduleItem {
   prefectureCode?: string;
 }
 
+export interface Photo {
+  id: number;
+  url: string;
+  caption?: string;
+  takenAt?: string;
+  location?: string;
+}
+
 export interface Schedule {
   id: number;
   title: string;
@@ -17,6 +25,7 @@ export interface Schedule {
   location: string;
   memo?: string;
   prefectureCode: string;
+  photos?: Photo[];
 }
 
 export interface SavedPlan {
@@ -29,4 +38,5 @@ export interface SavedPlan {
   scheduleCount: number;
   schedules: Schedule[];
   hasAlbum?: boolean;
+  photos?: Photo[];
 }

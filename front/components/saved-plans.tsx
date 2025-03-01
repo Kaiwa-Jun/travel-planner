@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Clock, Calendar, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Clock, Calendar, Pencil, Trash2, Upload } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { type SavedPlan, type Schedule } from "@/types/schedule";
@@ -20,6 +20,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { MapSection } from "@/app/create/components/MapSection";
 
 // サンプルの保存済みプラン
@@ -242,6 +251,7 @@ const initialSavedPlans: SavedPlan[] = [
 export const PLAN_ADDED_EVENT = "planAdded";
 export const PLAN_EDIT_EVENT = "planEdit";
 export const PLANS_STORAGE_KEY = "savedPlans";
+export const PHOTOS_STORAGE_KEY = "planPhotos";
 export const MARKERS_UPDATE_EVENT = "markersUpdate";
 
 // プラン追加用のカスタムイベントを作成
@@ -359,6 +369,199 @@ const prefectureMap: { [key: string]: string } = {
   "47": "沖縄県",
 };
 
+interface Photo {
+  id: number;
+  url: string;
+  timestamp: number;
+}
+
+function PhotoUploadModal({
+  isOpen,
+  onClose,
+  onUpload,
+  planTitle,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onUpload: (photos: Photo[]) => void;
+  planTitle: string;
+}) {
+  const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleFileSelection = async (files: FileList) => {
+    const newFiles = Array.from(files).filter((file) =>
+      file.type.startsWith("image/")
+    );
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
+
+    // プレビューURLの生成
+    const newPreviews = await Promise.all(
+      newFiles.map((file) => URL.createObjectURL(file))
+    );
+    setPreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await handleFileSelection(e.dataTransfer.files);
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    URL.revokeObjectURL(previews[index]);
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
+    setUploading(true);
+
+    try {
+      const photos: Photo[] = await Promise.all(
+        selectedFiles.map(async (file) => {
+          return new Promise<Photo>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve({
+                id: Date.now() + Math.random(),
+                url: reader.result as string,
+                timestamp: Date.now(),
+              });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+
+      onUpload(photos);
+      onClose();
+    } finally {
+      setUploading(false);
+      setSelectedFiles([]);
+      setPreviews([]);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      // クリーンアップ時にプレビューURLを解放
+      previews.forEach((previewUrl) => {
+        URL.revokeObjectURL(previewUrl);
+      });
+    };
+  }, [previews]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>写真のアップロード</DialogTitle>
+          <DialogDescription>
+            {planTitle}の思い出の写真をアップロードしましょう
+          </DialogDescription>
+        </DialogHeader>
+        <div
+          className={`mt-4 p-8 border-2 border-dashed rounded-lg text-center ${
+            dragActive
+              ? "border-primary bg-primary/10"
+              : "border-muted-foreground/20"
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground">
+              ドラッグ＆ドロップで写真をアップロード
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">または</p>
+            <div className="mt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={uploading}
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.multiple = true;
+                  input.accept = "image/*";
+                  input.onchange = async (e) => {
+                    const files = (e.target as HTMLInputElement).files;
+                    if (files && files.length > 0) {
+                      await handleFileSelection(files);
+                    }
+                  };
+                  input.click();
+                }}
+              >
+                写真を選択
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* プレビューエリア */}
+        {previews.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">
+              選択された写真 ({previews.length}枚)
+            </h4>
+            <div className="grid grid-cols-3 gap-2">
+              {previews.map((preview, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={preview}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => handleRemoveFile(index)}
+                    className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleUpload}
+            disabled={uploading || selectedFiles.length === 0}
+          >
+            {uploading ? "アップロード中..." : "アップロード"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // 保存済みプランカードコンポーネント
 function SavedPlanCard({
   plan,
@@ -372,9 +575,24 @@ function SavedPlanCard({
   onAlbumStateChange: (planId: number, hasAlbum: boolean) => void;
 }) {
   const [hasAlbum, setHasAlbum] = useState(plan.hasAlbum || false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>(plan.image);
   const router = useRouter();
 
-  // hasAlbumの変更をplanオブジェクトに反映
+  // サムネイル画像の読み込み
+  useEffect(() => {
+    const loadThumbnail = () => {
+      const savedPhotos = localStorage.getItem(PHOTOS_STORAGE_KEY);
+      if (savedPhotos) {
+        const photos = JSON.parse(savedPhotos);
+        if (photos[plan.id]?.length > 0) {
+          setThumbnailUrl(photos[plan.id][0].url);
+        }
+      }
+    };
+    loadThumbnail();
+  }, [plan.id]);
+
   const handleAlbumStateChange = (newState: boolean) => {
     setHasAlbum(newState);
     onAlbumStateChange(plan.id, newState);
@@ -385,6 +603,29 @@ function SavedPlanCard({
       p.id === plan.id ? { ...p, hasAlbum: newState } : p
     );
     localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify(updatedPlans));
+  };
+
+  const handlePhotoUpload = async (photos: Photo[]) => {
+    // 既存の写真データを取得
+    const existingPhotos = JSON.parse(
+      localStorage.getItem(PHOTOS_STORAGE_KEY) || "{}"
+    );
+
+    // プランIDに対応する写真配列を更新
+    existingPhotos[plan.id] = [...(existingPhotos[plan.id] || []), ...photos];
+
+    // 写真データを保存
+    localStorage.setItem(PHOTOS_STORAGE_KEY, JSON.stringify(existingPhotos));
+
+    // サムネイルを更新
+    if (photos.length > 0) {
+      setThumbnailUrl(photos[0].url);
+    }
+
+    // アルバム状態を更新
+    handleAlbumStateChange(true);
+    setIsUploadModalOpen(false);
+    router.push(`/albums/${plan.id}`);
   };
 
   const formatDateRange = (startDate: string, endDate: string) => {
@@ -411,7 +652,7 @@ function SavedPlanCard({
       <Card className="overflow-hidden group">
         <motion.div
           className="aspect-[16/9] bg-cover bg-center"
-          style={{ backgroundImage: `url(${plan.image})` }}
+          style={{ backgroundImage: `url(${thumbnailUrl})` }}
           variants={imageVariants}
           whileHover="hover"
         />
@@ -519,9 +760,7 @@ function SavedPlanCard({
                 if (hasAlbum) {
                   router.push(`/albums/${plan.id}`);
                 } else {
-                  handleAlbumStateChange(true);
-                  // TODO: 写真追加の処理を実装
-                  console.log("写真を追加", plan.id);
+                  setIsUploadModalOpen(true);
                 }
               }}
             >
@@ -538,6 +777,12 @@ function SavedPlanCard({
           </div>
         </CardContent>
       </Card>
+      <PhotoUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUpload={handlePhotoUpload}
+        planTitle={plan.title}
+      />
     </motion.div>
   );
 }
