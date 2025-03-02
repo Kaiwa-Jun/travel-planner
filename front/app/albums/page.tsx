@@ -19,6 +19,16 @@ const PHOTOS_STORAGE_KEY = "planPhotos";
 export default function AlbumsPage() {
   const [plans, setPlans] = useState<SavedPlan[]>([]);
   const router = useRouter();
+  const [sortBy, setSortBy] = useState<"all" | "date" | "location">("all");
+
+  // ソート用のボタンスタイル
+  const getSortButtonStyle = (isActive: boolean) => {
+    return `px-4 py-2 text-sm rounded-full transition-colors ${
+      isActive
+        ? "bg-primary text-primary-foreground"
+        : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
+    }`;
+  };
 
   // 初期データの読み込み
   useEffect(() => {
@@ -41,30 +51,60 @@ export default function AlbumsPage() {
     });
   }, [plans]);
 
-  // 日付でグループ化
-  const albumsByDate = useMemo(() => {
-    return albumPlans.reduce((acc, plan) => {
-      const month = format(new Date(plan.startDate), "yyyy年MM月", {
-        locale: ja,
-      });
-      if (!acc[month]) {
-        acc[month] = [];
-      }
-      acc[month].push(plan);
-      return acc;
-    }, {} as Record<string, SavedPlan[]>);
-  }, [albumPlans]);
+  // フィルター適用後のプラン（写真付きのプランのみ）
+  const filteredAndSortedPlans = useMemo(() => {
+    let result = [...albumPlans];
 
-  // 場所でグループ化
-  const albumsByLocation = useMemo(() => {
-    return albumPlans.reduce((acc, plan) => {
-      if (!acc[plan.location]) {
-        acc[plan.location] = [];
-      }
-      acc[plan.location].push(plan);
-      return acc;
-    }, {} as Record<string, SavedPlan[]>);
-  }, [albumPlans]);
+    // ソートの適用
+    switch (sortBy) {
+      case "all":
+        // IDでソート（作成順）
+        result.sort((a, b) => (a.id > b.id ? 1 : -1));
+        break;
+      case "date":
+        result.sort(
+          (a, b) =>
+            new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+        );
+        break;
+      case "location":
+        result.sort((a, b) => a.location.localeCompare(b.location));
+        break;
+    }
+
+    return result;
+  }, [albumPlans, sortBy]);
+
+  // プランをグループ化
+  const groupedPlans = useMemo(() => {
+    const result = new Map<string, SavedPlan[]>();
+
+    if (sortBy === "all") {
+      // 全てのプランを1つのグループにまとめる
+      result.set("すべてのアルバム", filteredAndSortedPlans);
+    } else if (sortBy === "date") {
+      // 年月でグループ化（降順）
+      filteredAndSortedPlans.forEach((plan) => {
+        const yearMonth = format(new Date(plan.startDate), "yyyy年MM月", {
+          locale: ja,
+        });
+        if (!result.has(yearMonth)) {
+          result.set(yearMonth, []);
+        }
+        result.get(yearMonth)?.push(plan);
+      });
+    } else {
+      // 場所でグループ化
+      filteredAndSortedPlans.forEach((plan) => {
+        if (!result.has(plan.location)) {
+          result.set(plan.location, []);
+        }
+        result.get(plan.location)?.push(plan);
+      });
+    }
+
+    return result;
+  }, [filteredAndSortedPlans, sortBy]);
 
   const AlbumCard = ({ plan }: { plan: SavedPlan }) => {
     const [thumbnailUrl, setThumbnailUrl] = useState<string>(plan.image);
@@ -133,59 +173,42 @@ export default function AlbumsPage() {
         >
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">アルバム</h1>
-            <Link href="/create">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                新規プラン作成
-              </Button>
-            </Link>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2 bg-muted/30 p-1 rounded-full w-fit">
+              <button
+                className={getSortButtonStyle(sortBy === "all")}
+                onClick={() => setSortBy("all")}
+              >
+                全て
+              </button>
+              <button
+                className={getSortButtonStyle(sortBy === "date")}
+                onClick={() => setSortBy("date")}
+              >
+                日付
+              </button>
+              <button
+                className={getSortButtonStyle(sortBy === "location")}
+                onClick={() => setSortBy("location")}
+              >
+                場所
+              </button>
+            </div>
           </div>
 
-          <Tabs defaultValue="all">
-            <TabsList>
-              <TabsTrigger value="all">すべて</TabsTrigger>
-              <TabsTrigger value="date">日付</TabsTrigger>
-              <TabsTrigger value="location">場所</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="all" className="space-y-6">
-              <div className="grid md:grid-cols-3 gap-6">
-                {albumPlans.map((plan) => (
-                  <AlbumCard key={plan.id} plan={plan} />
-                ))}
+          <div className="space-y-8">
+            {Array.from(groupedPlans.entries()).map(([group, plans]) => (
+              <div key={group} className="space-y-4">
+                <h2 className="text-xl font-semibold">{group}</h2>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {plans.map((plan) => (
+                    <AlbumCard key={plan.id} plan={plan} />
+                  ))}
+                </div>
               </div>
-            </TabsContent>
-
-            <TabsContent value="date" className="space-y-8">
-              {Object.entries(albumsByDate)
-                .sort(([a], [b]) => b.localeCompare(a))
-                .map(([month, monthPlans]) => (
-                  <div key={month} className="space-y-4">
-                    <h2 className="text-xl font-semibold">{month}</h2>
-                    <div className="grid md:grid-cols-3 gap-6">
-                      {monthPlans.map((plan) => (
-                        <AlbumCard key={plan.id} plan={plan} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </TabsContent>
-
-            <TabsContent value="location" className="space-y-8">
-              {Object.entries(albumsByLocation)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([location, locationPlans]) => (
-                  <div key={location} className="space-y-4">
-                    <h2 className="text-xl font-semibold">{location}</h2>
-                    <div className="grid md:grid-cols-3 gap-6">
-                      {locationPlans.map((plan) => (
-                        <AlbumCard key={plan.id} plan={plan} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </TabsContent>
-          </Tabs>
+            ))}
+          </div>
         </motion.div>
       </main>
     </div>

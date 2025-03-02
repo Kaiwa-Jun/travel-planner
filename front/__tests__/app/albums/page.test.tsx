@@ -79,18 +79,15 @@ describe("AlbumsPage", () => {
   it("正しくページがレンダリングされる", () => {
     render(<AlbumsPage />);
 
-    // ヘッダーとボタンの確認
+    // ヘッダーの確認
     expect(
       screen.getByRole("heading", { name: "アルバム" })
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /新規プラン作成/i })
-    ).toBeInTheDocument();
 
     // タブの存在確認
-    expect(screen.getByRole("tab", { name: "すべて" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "日付" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "場所" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "全て" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "日付" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "場所" })).toBeInTheDocument();
   });
 
   it("アルバムカードが正しく表示される", () => {
@@ -109,11 +106,11 @@ describe("AlbumsPage", () => {
     render(<AlbumsPage />);
 
     // 日付タブに切り替え
-    fireEvent.click(screen.getByRole("tab", { name: "日付" }));
+    fireEvent.click(screen.getByRole("button", { name: "日付" }));
     expect(screen.getByText("東京観光プラン")).toBeInTheDocument();
 
     // 場所タブに切り替え
-    fireEvent.click(screen.getByRole("tab", { name: "場所" }));
+    fireEvent.click(screen.getByRole("button", { name: "場所" }));
     expect(screen.getAllByText(/東京/)[0]).toBeInTheDocument();
   });
 
@@ -121,12 +118,12 @@ describe("AlbumsPage", () => {
     render(<AlbumsPage />);
 
     // 日付でのグループ化を確認
-    fireEvent.click(screen.getByRole("tab", { name: "日付" }));
+    fireEvent.click(screen.getByRole("button", { name: "日付" }));
     expect(screen.getByText("東京観光プラン")).toBeInTheDocument();
     expect(screen.getByText("京都旅行")).toBeInTheDocument();
 
     // 場所でのグループ化を確認
-    fireEvent.click(screen.getByRole("tab", { name: "場所" }));
+    fireEvent.click(screen.getByRole("button", { name: "場所" }));
     expect(screen.getAllByText(/東京/)[0]).toBeInTheDocument();
     expect(screen.getAllByText(/京都/)[0]).toBeInTheDocument();
   });

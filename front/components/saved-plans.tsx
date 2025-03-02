@@ -767,7 +767,7 @@ function SkeletonCard() {
 
 export const SavedPlans = () => {
   const [plans, setPlans] = useState<SavedPlan[]>([]);
-  const [sortBy, setSortBy] = useState<"date" | "location">("date");
+  const [sortBy, setSortBy] = useState<"all" | "date" | "location">("all");
 
   // フィルター用のボタンスタイル
   const getFilterButtonStyle = (isActive: boolean) => {
@@ -819,6 +819,10 @@ export const SavedPlans = () => {
 
     // ソートの適用
     switch (sortBy) {
+      case "all":
+        // IDでソート（作成順）
+        result.sort((a, b) => (a.id > b.id ? 1 : -1));
+        break;
       case "date":
         result.sort(
           (a, b) =>
@@ -826,17 +830,7 @@ export const SavedPlans = () => {
         );
         break;
       case "location":
-        // 都道府県コードでソート（北から南の順）
-        result.sort((a, b) => {
-          const prefCodeA = getPrefectureCodeFromLocation(
-            a.schedules[0].location
-          );
-          const prefCodeB = getPrefectureCodeFromLocation(
-            b.schedules[0].location
-          );
-          // 数値として比較することで北から南の順にソート
-          return parseInt(prefCodeA) - parseInt(prefCodeB);
-        });
+        result.sort((a, b) => a.location.localeCompare(b.location));
         break;
     }
 
@@ -847,7 +841,10 @@ export const SavedPlans = () => {
   const groupedPlans = useMemo(() => {
     const result = new Map<string, SavedPlan[]>();
 
-    if (sortBy === "date") {
+    if (sortBy === "all") {
+      // 全てのプランを1つのグループにまとめる
+      result.set("すべてのプラン", filteredAndSortedPlans);
+    } else if (sortBy === "date") {
       // 年月でグループ化（降順）
       filteredAndSortedPlans.forEach((plan) => {
         const yearMonth = format(new Date(plan.startDate), "yyyy年MM月", {
@@ -858,45 +855,17 @@ export const SavedPlans = () => {
         }
         result.get(yearMonth)?.push(plan);
       });
-
-      // グループを日付の降順でソート
-      return new Map(
-        Array.from(result.entries()).sort((a, b) => {
-          const dateA = new Date(a[1][0].startDate);
-          const dateB = new Date(b[1][0].startDate);
-          return dateA.getTime() - dateB.getTime();
-        })
-      );
     } else {
-      // 都道府県別でグループ化
+      // 場所でグループ化
       filteredAndSortedPlans.forEach((plan) => {
-        const prefCode = getPrefectureCodeFromLocation(
-          plan.schedules[0].location
-        );
-        const prefName = prefectureMap[prefCode];
-        if (!result.has(prefName)) {
-          result.set(prefName, []);
+        if (!result.has(plan.location)) {
+          result.set(plan.location, []);
         }
-        result.get(prefName)?.push(plan);
+        result.get(plan.location)?.push(plan);
       });
-
-      // 都道府県名でソート（北から南の順）
-      return new Map(
-        Array.from(result.entries()).sort((a, b) => {
-          // 都道府県コードを取得
-          const codeA =
-            Object.entries(prefectureMap).find(
-              ([_, name]) => name === a[0]
-            )?.[0] || "00";
-          const codeB =
-            Object.entries(prefectureMap).find(
-              ([_, name]) => name === b[0]
-            )?.[0] || "00";
-          // 数値として比較
-          return parseInt(codeA) - parseInt(codeB);
-        })
-      );
     }
+
+    return result;
   }, [filteredAndSortedPlans, sortBy]);
 
   // マーカー情報の生成と更新イベントの発行
@@ -986,6 +955,12 @@ export const SavedPlans = () => {
         </motion.h2>
         <div className="flex flex-col gap-2">
           <div className="flex gap-2 bg-muted/30 p-1 rounded-full w-fit">
+            <button
+              className={getSortButtonStyle(sortBy === "all")}
+              onClick={() => setSortBy("all")}
+            >
+              全て
+            </button>
             <button
               className={getSortButtonStyle(sortBy === "date")}
               onClick={() => setSortBy("date")}
